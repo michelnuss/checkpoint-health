@@ -241,13 +241,73 @@ body.v-clinician .chat{display:none}
 body.v-clinician .console{animation:winin .28s ease-out}
 body.v-patient .chat{animation:winin .28s ease-out;border-right:0}
 @keyframes winin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-body.v-clinician .c-body{padding:20px 32px 28px;max-width:1280px;margin:0 auto;width:100%}
+body.v-clinician .c-body{padding:16px 24px 28px;max-width:1480px;margin:0 auto;width:100%}
 .seg button.ping{position:relative}
 .seg button.ping::after{content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#F2B84B}
 .toast{position:fixed;right:22px;top:16px;z-index:20;background:#13191C;color:#fff;border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font-family:var(--c-font);font-size:14px;max-width:420px;animation:winin .25s ease-out}
 .toast small{display:block;color:#AEB9BF;font-size:12.5px;margin-top:2px}
 .toast button{background:#E6EFEA;color:#0F2E24;border:0;border-radius:8px;padding:8px 12px;font-weight:600;white-space:nowrap}
 .toast .x{background:transparent;color:#AEB9BF;padding:4px 6px}
+
+/* ---------- CONSOLE LAYOUT: queue | chart | decision ---------- */
+.cx{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+.cx-queue{position:sticky;top:0;display:flex;flex-direction:column;gap:6px}
+.cx-queue .qh{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--c-muted);text-transform:uppercase;letter-spacing:.04em;padding:2px 4px 4px}
+.cx-queue .qh span{text-transform:none;letter-spacing:0;font-weight:500}
+.qi{display:block;text-align:left;width:100%;background:var(--c-panel);border:1px solid var(--c-line);border-radius:8px;padding:9px 11px;font:inherit;font-size:12.5px;color:var(--c-muted)}
+.qi.active{border-color:var(--green);box-shadow:inset 3px 0 0 var(--green);background:#fff}
+.qi .top{display:flex;justify-content:space-between}
+.qi .id{font-family:var(--mono);font-size:11.5px}
+.qi .wt{font-size:11.5px;color:var(--amber);font-weight:600}
+.qi b{display:block;color:var(--c-ink);font-weight:600;font-size:13.5px;margin:2px 0}
+.qi .meta{display:flex;justify-content:space-between;gap:6px}
+.qi .tag{font-size:11px;border:1px solid var(--c-line);border-radius:5px;padding:0 5px;color:var(--c-ink)}
+.cx-main{min-width:0}
+.pbanner{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;background:var(--c-panel);border:1px solid var(--c-line);border-radius:10px;padding:12px 16px;margin-bottom:12px;position:sticky;top:0;z-index:2}
+.pbanner .who{display:flex;gap:12px;align-items:center}
+.pbanner h2{margin:0;font-size:19px;font-weight:600}
+.pbanner .demo{color:var(--c-muted);font-size:12.5px;margin-top:2px;font-family:var(--mono)}
+.pbanner .chips{display:flex;flex-wrap:wrap;gap:6px}
+.pbanner .clock{text-align:right;font-size:12px;color:var(--c-muted);display:grid;gap:4px;justify-items:end}
+.chip{font-size:12px;font-weight:500;padding:3px 9px;border-radius:6px;background:var(--c-soft);border:1px solid var(--c-line);color:var(--c-muted);white-space:nowrap}
+.chip.g{background:var(--green-soft);color:var(--green-ink);border-color:#BFD9CB}
+.chip.r{background:var(--red-soft);color:var(--red);border-color:#EDC4BC;font-weight:600}
+.chip.b{background:#EAF0F7;color:#24466B;border-color:#C9D7E8}
+.cx-cols{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:12px;align-items:start}
+.cx-chart{display:grid;gap:12px;min-width:0}
+.card{background:var(--c-panel);border:1px solid var(--c-line);border-radius:10px;padding:13px 16px}
+.card h3{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--c-ink);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.card h3 .src{font-weight:400;color:var(--c-muted);font-size:12px}
+.card h3 .src.ai{color:var(--accent-ink)}
+.hpi{margin:0 0 8px;font-size:15px;line-height:1.5}
+.verdict{display:inline-block;font-size:13.5px;font-weight:600;padding:5px 10px;border-radius:7px;background:var(--c-soft);color:var(--c-muted);margin-bottom:10px}
+.verdict.g{background:var(--green-soft);color:var(--green-ink)}.verdict.a{background:var(--amber-soft);color:var(--amber)}.verdict.r{background:var(--red-soft);color:var(--red)}
+.card .quote{font-size:13.5px}
+.card .quote .k,.rxcard .k{color:var(--c-muted);font-size:12px}
+.crits{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;font-size:13.5px}
+.crit{display:flex;gap:8px;align-items:center;padding:3px 4px;border-radius:5px}
+.crit .mark{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;flex:none;background:var(--c-soft);color:#9AA6AC}
+.crit.ok .mark{background:var(--green-soft);color:var(--green)}
+.crit.bad .mark{background:var(--red-soft);color:var(--red)}.crit.bad{color:var(--red);font-weight:600}
+.crit.warn .mark{background:var(--amber-soft);color:var(--amber)}.crit.warn{color:var(--amber);font-weight:600}
+.crit.wait{color:#9AA6AC}
+details.fold summary{cursor:pointer;list-style:none}
+details.fold summary h3{margin:0}
+details.fold[open] summary h3{margin-bottom:8px}
+.decide{position:sticky;top:76px;display:grid;gap:12px}
+.rxcard .dx{font-size:13px;margin-bottom:8px}
+.rxline{border:1px solid var(--c-line);border-radius:8px;padding:9px 11px;background:#FBFCFC;font-size:13.5px;line-height:1.5}
+.rxline b{display:block;font-size:14px}
+.rxcard .checks{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;margin:8px 0 2px}
+.rxcard .checks .ok{color:var(--green)}.rxcard .checks .bad{color:var(--red);font-weight:600}.rxcard .checks .wait{color:#9AA6AC}
+.decide .actions{padding:0}
+.decide .actions .approve{flex:1 1 100%;padding:11px 14px;font-size:15px}
+.decide .signed{border-radius:10px;border:1px solid #BFD9CB}
+.card.stop{border-color:#EDC4BC;background:#FFF8F6}
+.card.stop p{margin:0 0 6px;font-size:14px;line-height:1.5}
+.cx .log{margin-top:0}
+@media (max-width:1180px){.cx{grid-template-columns:1fr}.cx-queue{position:static;flex-direction:row;overflow-x:auto}.qi{min-width:180px}.cx-queue .qh{display:none}}
+@media (max-width:1020px){.cx-cols{grid-template-columns:1fr}.decide{position:static}.crits{grid-template-columns:1fr}.pbanner{grid-template-columns:1fr;position:static}.pbanner .clock{justify-items:start;text-align:left}}
 
 /* ---------- CONSOLE ---------- */
 .console{font-family:var(--c-font);color:var(--c-ink);display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden}
@@ -1043,122 +1103,169 @@ function renderConsole() {
   const root = $("#console");
   const c = Engine.clinician();
   $("#docline").textContent = c ? `Signed in as ${c.name}, ${c.cred}. ${c.license}` : "Florida practice, 3 clinicians online";
-  const queue = h("div", { class: "queue" },
-    S.complaint ? h("div", { class: "q active" }, h("span", { class: "id" }, S.caseId), h("b", {}, S.disposition === "in_person" ? "Routed in person" : "Urinary symptoms"), statusText()) : null,
-    DATA.queue.map(q => h("div", { class: "q" }, h("span", { class: "id" }, q.id), h("b", {}, q.what), q.status)));
+  const queue = queueList();
   if (!S.complaint) {
-    root.replaceChildren(queue, h("div", { class: "c-empty" }, h("b", {}, "No new case yet"),
-      "When a patient's AI hands off through Checkpoint, the case builds here as they answer."), logBox());
+    root.replaceChildren(h("div", { class: "cx" }, queue, h("div", { class: "cx-main" }, h("div", { class: "c-empty" }, h("b", {}, "No new case yet"),
+      "When a patient's AI hands off through Checkpoint, the case builds here as they answer."), logBox())));
     seen = new Set(); return;
   }
-  const a = S.intake;
+  const a = S.intake, ans = id => S.answers[id] ? S.answers[id].vals : null;
   const ag = a.dob ? age(a.dob.value) : null;
   const name = a.name ? a.name.value : null;
   const title = viewAI ? "[PATIENT_NAME]" : (name || "New patient");
-  const sex = S.answers.sex ? S.answers.sex.vals[0] : null;
+  const sex = ans("sex") ? ans("sex")[0] : null;
+  const allergy = a.allergies ? a.allergies.value : null;
+  const nka = allergy && /no known/i.test(allergy);
+  const red = ans("red"), pregnant = red && red.includes("Could be pregnant");
+  const where = a.address ? inFlorida(a.address.value) : null;
 
-  const top = h("div", { class: "case-top" },
-    h("div", {}, h("h2", {}, title),
-      h("div", { class: "demo" }, [sex, ag != null ? (viewAI ? "age 30 to 39" : ag + " years") : null, a.address ? (inFlorida(a.address.value) ? "in Florida" : "outside Florida") : null].filter(Boolean).join(", ") || "Identity not collected yet")),
-    h("div", { class: "right" }, h("div", {}, statusPill()), h("div", { class: "id" }, S.caseId + "  ·  received " + fmtTime(S.t0)),
-      S.submittedAt && !S.answeredAt ? h("div", {}, "Waiting " + waitText()) : null));
+  // ---- Patient banner (EHR style): who, safety flags, visit, clock
+  const chip = (cls, text, k) => h("span", { class: "chip " + cls, "data-k": k }, text);
+  const banner = h("div", { class: "pbanner" },
+    h("div", { class: "who" }, h("div", { class: "avatar" }, viewAI || !name ? "?" : initials(name)),
+      h("div", {}, h("h2", {}, title),
+        h("div", { class: "demo" }, [sex === "Female" ? "F" : sex === "Male" ? "M" : null, ag != null ? (viewAI ? "30 to 39 y" : ag + " y") : ans("age") ? ans("age")[0] : null,
+          a.dob && !viewAI ? "DOB " + a.dob.value : null, S.caseId].filter(Boolean).join("  ·  ")))),
+    h("div", { class: "chips" },
+      allergy ? chip(nka ? "g" : "r", viewAI ? "[ALLERGIES]" : nka ? "NKDA" : "Allergy: " + allergy, "al" + allergy) : chip("", "Allergies pending", "al0"),
+      red ? chip(pregnant ? "r" : "g", pregnant ? "Possibly pregnant" : "Denies pregnancy", "preg" + pregnant) : chip("", "Pregnancy pending", "preg0"),
+      where == null ? chip("", "Location pending", "loc0") : chip(where ? "g" : "r", where ? "In Florida ✓" : "Outside Florida", "loc" + where),
+      S.visitType ? chip("b", S.visitType === "video" ? "Video" + (S.videoNow ? ", now" : ", " + S.slot.replace(/^Tonight /, "")) : "Online visit (async)", "vt" + S.visitType) : null),
+    h("div", { class: "clock" }, statusPill(),
+      S.submittedAt ? h("div", { id: "waitclock" }, clockText()) : h("div", {}, "Received " + fmtTime(S.t0))));
 
-  // Screener
+  // ---- One-line summary, written by the rules (not AI)
+  const durationTxt = ans("duration") ? ans("duration")[0].toLowerCase() : null;
   const negs = [];
-  const rows = DATA.questions.map(q => {
-    const ans = S.answers[q.id];
-    let pill = h("span", { class: "pill" }, "Pending");
-    if (ans) {
-      const isRed = q.id === "red" && ans.vals.some(v => v !== "None of these");
-      const isCaution = (q.id === "sex" && ans.vals[0] === "Male") || (q.id === "age" && ans.vals[0] !== "18 to 64") || (q.id === "duration" && ans.vals[0] === "More than 7 days") || (q.id === "recurrent" && ans.vals[0] === "3 or more") || (q.id === "other" && ans.vals.some(v => v !== "None of these"));
-      pill = isRed ? h("span", { class: "pill r" }, "Red flag") : isCaution ? h("span", { class: "pill a" }, "Review") : h("span", { class: "pill g" }, "Pass");
-      if (q.id === "red" || q.id === "other") q.options.forEach(o => { if (!o.none && !ans.vals.includes(o.label)) negs.push(o.neg); });
-    }
-    return h("tr", { "data-k": "q_" + q.id + (ans ? "_done" : "") }, h("td", {}, q.short), h("td", {}, ans ? ans.vals.join(", ") : h("span", { style: "color:#9AA6AC" }, "Not asked yet")), h("td", {}, pill));
-  });
-  const screener = h("div", { class: "sec" }, h("h3", {}, "Screener, " + DATA.protocol.id + " " + DATA.protocol.version),
-    h("table", { class: "scr" }, rows),
-    negs.length ? h("div", { class: "neg", "data-k": "negs" + negs.length }, "Denies " + negs.join(", ") + ".") : null);
+  ["red", "other"].forEach(id => { const q = DATA.questions.find(x => x.id === id), v = ans(id); if (v) q.options.forEach(o => { if (!o.none && !v.includes(o.label)) negs.push(o.neg); }); });
+  const who = (ag != null && !viewAI ? ag + "-year-old " : "") + (sex === "Male" ? "man" : sex === "Female" ? "woman" : "patient");
+  const summaryTxt = `${who.charAt(0).toUpperCase() + who.slice(1)} with burning on urination${durationTxt ? " for " + durationTxt : ""}.` +
+    (S.red.length ? ` Reports ${S.red.join(", ").toLowerCase()}.` : negs.length ? ` Denies ${negs.slice(0, 5).join(", ")}.` : "") +
+    (ans("recurrent") ? ` ${ans("recurrent")[0] === "None" ? "No" : ans("recurrent")[0]} UTIs in the past 12 months.` : "") +
+    (S.caution.length ? ` Needs review: ${S.caution.join(", ").toLowerCase()}.` : "");
+  const verdict = S.disposition === "async" ? h("div", { class: "verdict g" }, "Meets " + DATA.protocol.id + " criteria for an online visit")
+    : S.disposition === "video" ? h("div", { class: "verdict a" }, "Eligible, video visit required")
+    : S.disposition === "in_person" ? h("div", { class: "verdict r" }, "Red flag. Sent to in-person care, no case created")
+    : h("div", { class: "verdict" }, "Screener in progress");
+  const summary = h("div", { class: "card", "data-k": "sum" + Object.keys(S.answers).length },
+    h("h3", {}, "Summary ", h("span", { class: "src" }, "written by Checkpoint's rules, not AI")),
+    h("p", { class: "hpi" }, summaryTxt), verdict,
+    h("div", { class: "quote" }, h("span", { class: "k" }, "Patient wrote "), "“" + S.complaint + "”"));
 
-  const dispo = h("div", { class: "sec" }, h("h3", {}, "Reason for visit"),
-    h("div", { class: "quote", "data-k": "complaint" }, "“" + S.complaint + "”"),
-    h("div", { style: "margin-top:12px", "data-k": "dispo_" + (S.disposition || "none") },
-      S.disposition === "async" ? [h("div", { class: "dispo g" }, "Fits the text-visit protocol"), h("div", { class: "neg" }, DATA.protocol.name + ". No red flags.")]
-      : S.disposition === "video" ? [h("div", { class: "dispo a" }, "Eligible, video visit required"), h("div", { class: "neg" }, "Review: " + S.caution.join(", "))]
-      : S.disposition === "in_person" ? [h("div", { class: "dispo r" }, "Red flag, sent to in-person care"), h("div", { class: "neg" }, S.red.join(", ") + ". No clinician case was created.")]
-      : h("div", { class: "neg" }, "Screener in progress")));
+  // ---- Protocol checklist (inclusion and exclusion criteria)
+  const crit = (label, state, k) => h("li", { class: "crit " + state, "data-k": "cr_" + k + state }, h("span", { class: "mark" }, state === "ok" ? "✓" : state === "bad" ? "✗" : state === "warn" ? "!" : "·"), label);
+  const has = (id, label) => ans(id) ? (ans(id).includes(label) ? "bad" : "ok") : "wait";
+  const checklist = h("div", { class: "card" },
+    h("h3", {}, "Protocol " + DATA.protocol.id + " checklist ", h("span", { class: "src" }, DATA.protocol.name)),
+    h("ul", { class: "crits" },
+      crit("Female", sex ? (sex === "Female" ? "ok" : "warn") : "wait", "sex"),
+      crit("Age 18 to 64", ans("age") ? (ans("age")[0] === "18 to 64" ? "ok" : "warn") : "wait", "age"),
+      crit("No fever or chills", has("red", "Fever of 100.4°F or chills"), "fev"),
+      crit("No flank or back pain", has("red", "Pain in your back or side"), "fl"),
+      crit("No vomiting", has("red", "Vomiting"), "vo"),
+      crit("Not pregnant", has("red", "Could be pregnant"), "pr"),
+      crit("No visible blood", has("red", "Blood in your urine"), "bl"),
+      crit("Symptoms 7 days or less", ans("duration") ? (ans("duration")[0] === "More than 7 days" ? "warn" : "ok") : "wait", "du"),
+      crit("Fewer than 3 UTIs a year", ans("recurrent") ? (ans("recurrent")[0] === "3 or more" ? "warn" : "ok") : "wait", "re"),
+      crit("No complicating factors", ans("other") ? (ans("other").some(v => v !== "None of these") ? "warn" : "ok") : "wait", "ot"),
+      crit("In Florida now (license state)", where == null ? "wait" : where ? "ok" : "bad", "fl_loc"),
+      crit("Birth date matches age answer", ag == null ? "wait" : (ag >= 18 && ag <= 64) === (ans("age") && ans("age")[0] === "18 to 64") ? "ok" : "warn", "id")));
 
+  // ---- Screener answers, compact
+  const screener = h("details", { class: "card fold" }, h("summary", {}, h("h3", {}, "Screener answers ", h("span", { class: "src" }, DATA.protocol.version))),
+    h("table", { class: "scr" }, DATA.questions.map(q => {
+      const v = ans(q.id);
+      return h("tr", { "data-k": "q_" + q.id + (v ? "_done" : "") }, h("td", {}, q.short), h("td", {}, v ? v.join(", ") : h("span", { style: "color:#9AA6AC" }, "Not asked yet")));
+    })));
+
+  // ---- Chart: meds, pharmacy, contact
   const pharmacy = a.pharmacy ? a.pharmacy.value : null;
-  const patient = h("div", { class: "sec" }, h("h3", {}, "Patient"),
-    row("name" + !!a.name, "Legal name", val("name", name, "[PATIENT_NAME]")),
-    row("dob" + !!a.dob, "Date of birth", val("dob", a.dob && a.dob.value, "[DOB]", ag != null ? h("span", { class: ag >= 18 && ag <= 64 ? "ok" : "bad" }, (ag >= 18 && ag <= 64 ? "✓ " : "✗ ") + ag + ", matches screener") : null)),
-    row("address" + !!a.address, "Location", val("address", a.address && a.address.value, "[ADDRESS]", a.address ? h("span", { class: inFlorida(a.address.value) ? "ok" : "bad" }, inFlorida(a.address.value) ? "✓ Florida, license matches" : "✗ outside Florida") : null)),
-    row("phone" + !!a.phone, "Mobile", val("phone", a.phone && a.phone.value, "[PHONE]")));
-
-  const history = h("div", { class: "sec" }, h("h3", {}, "Medications and pharmacy"),
-    row("allergies" + !!a.allergies, "Allergies", val("allergies", a.allergies && a.allergies.value, "[ALLERGIES]")),
+  const chart = h("div", { class: "card" }, h("h3", {}, "Chart"),
     row("meds" + !!a.meds, "Medications", val("meds", a.meds && a.meds.value, "[MEDICATIONS]")),
+    row("allergies" + !!a.allergies, "Allergies", val("allergies", allergy, "[ALLERGIES]")),
     row("pharmacy" + !!a.pharmacy, "Pharmacy", val("pharmacy", pharmacy, "[PHARMACY]")),
-    row("recurrent" + !!S.answers.recurrent, "Prior UTIs", val("recurrent", S.answers.recurrent && S.answers.recurrent.vals[0] + " in 12 months")));
+    row("address" + !!a.address, "Location now", val("address", a.address && a.address.value, "[ADDRESS]")),
+    row("phone" + !!a.phone, "Mobile", val("phone", a.phone && a.phone.value, "[PHONE]")),
+    row("c" + !!S.consents, "Consents", val("c", S.consents ? "Telehealth, AI disclosure, share with practice" + (S.consents.followup ? ", 72-hour check-in" : "") + ". Signed " + fmtTime(S.consents.at) : null)),
+    row("card" + !!S.consents, "Payment", val("card", S.consents ? "$" + Engine.price() + " held on test card 4242. You're paid $" + (S.visitType === "video" ? 30 : 20) + " flat." : null)));
 
-  const billing = h("div", { class: "sec" }, h("h3", {}, "Visit and payment"),
-    row("clin" + !!c, "Clinician", val("clin", c ? c.name + ", " + c.cred : null)),
-    row("visit" + (S.visitType || ""), "Visit type", val("visit", S.visitType === "video" ? "Video visit, " + (S.videoNow ? "right away (asked " + S.slot.replace(/^Tonight /, "") + ")" : S.slot) + ". Zoom " + ZOOM.id + ", on patient's Google Calendar" : S.visitType === "text" ? "Text visit, answer by message" : null)),
-    row("price" + !!c + (S.visitType || ""), "Visit fee", val("price", c && S.visitType ? "$" + Engine.price() + " flat. Clinician paid " + (S.visitType === "video" ? "$30" : "$20") + "." : null)),
-    row("card" + !!S.consents, "Payment", val("card", S.consents ? "$" + Engine.price() + " held on test card ending 4242" : null)));
-
-  const consents = h("div", { class: "sec" }, h("h3", {}, "Consents"),
-    S.consents ? [
-      row("c_tele", "Telehealth", h("span", { class: "v" }, "✓ Signed " + fmtTime(S.consents.at))),
-      row("c_ai", "AI disclosure", h("span", { class: "v" }, "✓ Acknowledged")),
-      row("c_share", "Share with practice", h("span", { class: "v" }, "✓ Yes, BAA in place")),
-      row("c_fu", "72-hour check-in", h("span", { class: "v" }, S.consents.followup ? "✓ Opted in" : "Declined"))
-    ] : row("c_wait", "Status", h("span", { class: "v wait" }, "Waiting for patient")));
-
-  const sections = S.disposition === "in_person"
-    ? [dispo, screener, h("div", { class: "sec full" }, h("h3", {}, "Patient details"), h("div", { class: "neg" }, "None collected. Checkpoint stops before asking for identity when a red flag appears, so no personal data leaves the patient's chat."))]
-    : [dispo, screener, patient, history, billing, consents];
-  let review = null;
-  if (S.disposition !== "in_person") {
-    const p = planLines();
-    review = h("div", { class: "sec full draftwrap", "data-k": "draft" + !!S.submittedAt + (S.draftStatus || "") },
-      h("h3", {}, "AI draft reply, edit before you approve"),
+  // ---- Decision panel: order, message, sign
+  let decide;
+  if (S.disposition === "in_person") {
+    decide = h("aside", { class: "decide" }, h("div", { class: "card stop" }, h("h3", {}, "No action needed"),
+      h("p", {}, "Checkpoint routed this patient to in-person care before any personal details were collected. Nothing was sent to you to treat."),
+      h("p", { class: "neg" }, "Reason: " + S.red.join(", ") + ".")));
+  } else {
+    const p = planLines(), nitro = p.drug === "nitrofurantoin";
+    const order = h("div", { class: "card rxcard", "data-k": "rx" + p.drug + !!pharmacy },
+      h("h3", {}, "Order ", h("span", { class: "src" }, "protocol default, you can change it")),
+      h("div", { class: "dx" }, h("span", { class: "k" }, "Dx "), p.dx),
+      h("div", { class: "rxline" }, h("b", {}, nitro ? "Nitrofurantoin mono/macro 100 mg capsule" : "Fosfomycin 3 g oral granules"),
+        h("div", {}, nitro ? "Sig: 1 capsule by mouth twice daily for 5 days" : "Sig: dissolve 1 packet in water, take once"),
+        h("div", { class: "neg" }, nitro ? "Disp: 10 capsules  ·  Refills: 0" : "Disp: 1 packet  ·  Refills: 0")),
+      h("div", { class: "checks" },
+        h("span", { class: allergy ? "ok" : "wait" }, allergy ? (nitro ? "✓ No allergy conflict" : "✓ Switched for nitrofurantoin allergy") : "· Allergy check pending"),
+        h("span", { class: pregnant ? "bad" : red ? "ok" : "wait" }, pregnant ? "✗ Pregnancy" : red ? "✓ Not pregnant" : "· Pregnancy pending"),
+        h("span", { class: "ok" }, "✓ Not a controlled substance")),
+      h("div", { class: "neg" }, "To: " + (pharmacy ? (viewAI ? "[PHARMACY]" : pharmacy) : "pharmacy pending") + ". e-Prescribing simulated in this demo. " + p.alt + "."));
+    const msg = h("div", { class: "card draftwrap", "data-k": "draft" + !!S.submittedAt + (S.draftStatus || "") },
+      h("h3", {}, "Message to patient ", h("span", { class: "src ai" }, S.draftStatus === "claude" ? "drafted by Claude, review before signing" : "protocol template")),
       S.submittedAt ? [
         h("textarea", { id: "draft", readonly: true, "aria-label": "Draft reply to patient" }, viewAI ? maskDraft(S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft) : (S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft)),
-        h("div", { class: "plan" }, h("b", {}, "Assessment. "), p.dx, h("br"), h("b", {}, "Plan per protocol. "), p.rx, ". ", p.alt, ".", h("br"), p.fu, h("br"),
-          h("span", { class: "sim" }, (S.draftStatus === "drafting" ? "Claude is drafting from the masked case. Protocol template shown meanwhile. " : S.draftStatus === "claude" ? "Drafted by Claude from the masked case; Checkpoint filled in name and pharmacy. " : "Drafted from protocol " + DATA.protocol.id + ". ") + "The prescription is simulated in this demo."))
-      ] : h("div", { class: "neg" }, "The draft appears once the patient sends the case. Until then you can watch the screener and details arrive."));
+        h("div", { class: "neg" }, S.draftStatus === "drafting" ? "Claude is drafting from the masked case. Template shown meanwhile." : "Claude never saw the patient's name or details; Checkpoint filled them in. You sign, Claude doesn't.")
+      ] : h("div", { class: "neg" }, "The draft appears when the patient sends the case."));
+    decide = h("aside", { class: "decide" }, order, msg, h("div", { class: "actions", id: "actions" }),
+      S.signed ? h("div", { class: "signed" },
+        S.signed.video ? "Video visit started " + fmtTime(S.signed.at) + "." :
+        S.signed.refer ? "Referred to in-person care " + fmtTime(S.signed.at) + ". Patient not charged." :
+        `Signed by ${c.name}, ${c.cred} at ${fmtTime(S.signed.at)}${S.signed.edited ? ", after editing the AI draft" : ""}. e-Prescription sent (simulated).`) : null);
   }
-  const caseEl = h("div", { class: "case" }, top, h("div", { class: "grid" }, sections, review));
-  if (S.disposition !== "in_person") caseEl.append(h("div", { class: "actions", id: "actions" }));
-  if (S.signed) caseEl.append(h("div", { class: "signed" },
-    S.signed.video ? "Video visit started " + fmtTime(S.signed.at) + "." :
-    S.signed.refer ? "Referred to in-person care " + fmtTime(S.signed.at) + ". Patient not charged." :
-    `Signed by ${c.name}, ${c.cred} at ${fmtTime(S.signed.at)}${S.signed.edited ? ", after editing the AI draft" : ""}. e-Prescription sent (simulated).`));
 
-  root.replaceChildren(queue, caseEl, logBox(),
-    h("div", { class: "foot" }, "All patients, clinicians, licenses, pharmacies and insurers here are synthetic."));
+  const mainCol = S.disposition === "in_person"
+    ? [summary, checklist, h("div", { class: "card" }, h("h3", {}, "Patient details"), h("div", { class: "neg" }, "None collected. Checkpoint stops before asking for identity when a red flag appears."))]
+    : [summary, checklist, chart, screener];
+  root.replaceChildren(h("div", { class: "cx" }, queue,
+    h("div", { class: "cx-main" }, banner, h("div", { class: "cx-cols" }, h("div", { class: "cx-chart" }, mainCol, logBox()), decide),
+      h("div", { class: "foot" }, "All patients, clinicians, licenses and pharmacies here are synthetic. Prescriptions are simulated."))));
   if (S.disposition !== "in_person") renderActions();
 
   // highlight anything new
   const now = new Set();
   root.querySelectorAll("[data-k]").forEach(el => {
     const k = el.dataset.k; now.add(k);
-    if (seen.size && !seen.has(k) && !/false$|^q_[a-z]+$|c_wait/.test(k)) el.classList.add("flash");
+    if (seen.size && !seen.has(k) && !/false$|^q_[a-z]+$|c_wait|0$|wait$/.test(k)) el.classList.add("flash");
   });
   seen = now;
+}
+// Visit queue, like an async e-visit inbox: what's waiting, how long, which visit type.
+function queueList() {
+  const mine = S.complaint ? h("button", { class: "qi active" },
+    h("div", { class: "top" }, h("span", { class: "id" }, S.caseId), h("span", { class: "wt" }, S.submittedAt && !S.answeredAt ? waitShort() : "")),
+    h("b", {}, S.disposition === "in_person" ? "Routed in person" : "Painful urination"),
+    h("div", { class: "meta" }, statusText(), S.visitType ? h("span", { class: "tag" }, S.visitType === "video" ? "Video" : "Online") : null)) : null;
+  return h("nav", { class: "cx-queue", "aria-label": "Visit queue" },
+    h("div", { class: "qh" }, "Queue", h("span", {}, (S.complaint ? 1 : 0) + " waiting")),
+    mine, DATA.queue.map(q => h("div", { class: "qi" }, h("div", { class: "top" }, h("span", { class: "id" }, q.id)), h("b", {}, q.what), h("div", { class: "meta" }, q.status))));
+}
+// Response clock: the practice's target is a reply within 30 minutes of the case arriving.
+const REPLY_TARGET_MIN = 30;
+function waitShort() { const s = Math.floor((Date.now() - S.submittedAt) * CLOCK_SPEED / 1000); return Math.floor(s / 60) + " min"; }
+function clockText() {
+  if (S.answeredAt || S.signed) return "Answered";
+  const due = new Date(demoNow(S.submittedAt) + REPLY_TARGET_MIN * 60000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return "Waiting " + waitText() + "  ·  reply due " + due;
 }
 function renderActions() {
   const box = $("#actions"); if (!box) return;
   const ready = S.phase === "submitted" && !viewAI;
   const ta = $("#draft");
   const editing = ta && !ta.readOnly;
-  box.replaceChildren(
+  box.replaceChildren(...[
     S.visitType === "video" && !S.videoStarted ? h("button", { class: "approve", disabled: !ready, onclick: Doctor.video }, "Start video visit") : null,
-    h("button", { class: S.visitType === "video" && !S.videoStarted ? "" : "approve", disabled: !ready, onclick: Doctor.approve }, "Approve and send"),
+    h("button", { class: S.visitType === "video" && !S.videoStarted ? "" : "approve", disabled: !ready, onclick: Doctor.approve }, "Approve, sign and send Rx"),
     h("button", { disabled: !ready, onclick: Doctor.edit }, editing ? "Done editing" : "Edit draft"),
     S.visitType !== "video" ? h("button", { disabled: !ready || !!S.videoStarted, onclick: Doctor.video }, S.videoStarted ? "Video started" : "Switch to video") : null,
-    h("button", { disabled: !ready, onclick: Doctor.refer }, "Refer in person"));
+    h("button", { disabled: !ready, onclick: Doctor.refer }, "Refer in person")].filter(Boolean));
 }
 function statusText() {
   return { idle: "Starting", screening: "Screening in progress", result: "Screener done", clinicians: "Choosing a clinician",
@@ -1174,7 +1281,7 @@ function logBox() {
     S.events.length ? h("ol", {}, S.events.slice().reverse().map(e => h("li", {}, h("time", {}, fmtTime(e.at)), h("span", {}, e.text))))
       : h("div", { class: "neg" }, "Every decision Checkpoint makes is logged here."));
 }
-setInterval(() => { if (S && S.submittedAt && !S.answeredAt) { const el = document.querySelector(".case-top .right div:last-child"); if (el) el.textContent = "Waiting " + waitText(); } }, 1000);
+setInterval(() => { if (S && S.submittedAt && !S.answeredAt) { const el = $("#waitclock"); if (el) el.textContent = clockText(); } }, 1000);
 
 /* =========================================================
    WINDOWS: patient's Claude chat and the clinician's console
