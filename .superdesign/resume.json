@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/#clinician-console": {
+      "targetKind": "existing-ui",
+      "projectId": "78ca828e-219f-4fce-ab1f-f3e3e8238a6f",
+      "baselineDraftId": "318bf43a-81a6-41e8-8b16-bb6a33dbbf03",
+      "activeDraftId": "318bf43a-81a6-41e8-8b16-bb6a33dbbf03",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "1c4db7fd-06a3-49cb-a499-adbe60db61d0"
+      ],
+      "brandAssets": {},
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "public/index.html:12:25",
+        "public/index.html:236:458",
+        "public/index.html:498:512",
+        "public/index.html:1195:1440"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "c18d907a0213ac9bfb6c90431d26a232bb4d87509faeca3b6c2b632cd286798c",
+        "public/index.html": "stale: console code changed after the baseline (dashboard added)"
+      },
+      "components": [],
+      "drafts": {
+        "318bf43a-81a6-41e8-8b16-bb6a33dbbf03": {
+          "title": "Clinician Console UI (baseline reproduction)",
+          "visualDirection": "current",
+          "currentVersion": 1
+        },
+        "6279b9ff-8095-4440-b56c-c20a6cc29d9c": {
+          "title": "Clinician Console - Clinical Paper Style",
+          "visualDirection": "clinical paper, serif, warm",
+          "parentDraftId": "318bf43a-81a6-41e8-8b16-bb6a33dbbf03",
+          "currentVersion": 1
+        },
+        "78a5912a-c08a-4818-a343-2f8db0a8cf0c": {
+          "title": "Night Shift Command Center",
+          "visualDirection": "dark, dense, keyboard-first",
+          "parentDraftId": "318bf43a-81a6-41e8-8b16-bb6a33dbbf03",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-11-08T15:01:42.550550+00:00"
+    }
+  }
+}

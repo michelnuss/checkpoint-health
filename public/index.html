@@ -7,12 +7,12 @@
 <title>Checkpoint Health, live demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   --bar:#0F2E24; --bar-ink:#E6EFEA; --bar-muted:#93ADA2;
   --chat-bg:#FAF9F5; --chat-ink:#141413; --chat-muted:#73726C; --chat-line:#E8E6DC; --user-bubble:#F0EEE6; --rail:#F5F4EE; --accent:#D97757; --accent-ink:#C6613F;
-  --c-bg:#EBEFF1; --c-panel:#FFFFFF; --c-ink:#13191C; --c-muted:#5B6970; --c-line:#D7DEE2; --c-soft:#F5F7F8;
+  --c-bg:#F4F1E8; --c-panel:#FFFFFF; --c-ink:#1C1B1A; --c-muted:#706E6B; --c-line:#E8E5DF; --c-soft:#F0ECE1; /* clinical paper */
   --green:#1C5741; --green-ink:#14402F; --green-soft:#E1EFE7;
   --red:#B3372A; --red-soft:#F9E6E2;
   --amber:#8A5A00; --amber-soft:#F7EDD6;
@@ -520,6 +520,18 @@ body.night .tgl .sw::after{background:#E3EAEC}
 body.night .view.tabs button[aria-pressed="true"]{background:var(--c-ink);color:var(--c-bg)}
 @media (max-width:1180px){.tiles{grid-template-columns:repeat(3,1fr)}.dgrid{grid-template-columns:1fr}.dgrid > *{grid-area:auto!important}}
 
+/* ---------- CLINICAL PAPER (from the Superdesign "Clinical paper" direction) ---------- */
+body:not(.night) .console{background:var(--c-bg)}
+.pbanner h2{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:-.005em;line-height:1.1}
+.hpi{font-family:var(--serif);font-size:17px;line-height:1.6;margin:2px 0 12px}
+.dhead h2{font-family:var(--serif);font-size:26px;font-weight:600}
+.tile .v{font-family:var(--serif);font-weight:600}
+.pbanner .avatar{background:#EAF0F7;color:#24466B;font-family:var(--serif);font-size:15px}
+body:not(.night) .rxline{background-color:#FFFDF8}
+body:not(.night) .chip{background:var(--c-panel)}
+body:not(.night) .tgl .sw{background:#DAD5CA}
+body:not(.night) .tgl input:checked + .sw{background:var(--green)}
+.chart .bar path{opacity:.5}
 </style>
 </head>
 <body class="v-patient">
