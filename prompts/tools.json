@@ -1,0 +1,85 @@
+[
+  {
+    "name": "ask_user",
+    "description": "Your own built-in question card (not part of Checkpoint). Shows the patient a question with 2 to 6 clickable options plus a box to type something else. Use it whenever you ask something with a small set of answers. It must be the last tool call in your turn; the patient's answer comes back as this tool's result.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "The question, in your own words, one sentence"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 6,
+          "description": "Answer options. For a screener question, copy the options from the Checkpoint result exactly, same text and order."
+        },
+        "multi_select": {
+          "type": "boolean",
+          "description": "True when the patient can pick several options. For a screener question, use the result's multi value."
+        }
+      },
+      "required": [
+        "question",
+        "options"
+      ]
+    }
+  },
+  {
+    "name": "checkpoint_screen_next",
+    "description": "Start or continue Checkpoint's fixed-rule safety screener for urinary symptoms. Call with no input to start. Then call with the patient's answer to the current question, word for word. Returns either the next question (type: question, with the options the app shows as buttons) or the final result (type: result, with disposition async, video or in_person). May return an error field when the answer can't be matched to an option.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "answer": {
+          "type": "string",
+          "description": "The patient's reply to the current question, word for word. Omit to start the screener."
+        }
+      }
+    }
+  },
+  {
+    "name": "checkpoint_list_clinicians",
+    "description": "List clinicians licensed in the patient's state who can take this case, cheapest first, with price, languages and typical reply time. The app shows them as cards. Call only after a result with disposition async or video, and only when the patient has said yes to being connected. Pass visit \"video\" if the patient asked for a video visit or call, so video prices are shown.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "visit": {
+          "type": "string",
+          "enum": [
+            "video"
+          ],
+          "description": "Set to \"video\" when the patient asked for a video visit or call. Omit otherwise."
+        }
+      }
+    }
+  },
+  {
+    "name": "checkpoint_select_clinician",
+    "description": "Record which clinician the patient chose. Use the id from the patient's message, for example clin_marquez.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "clinician_id": {
+          "type": "string",
+          "description": "Clinician id, for example clin_marquez"
+        }
+      },
+      "required": [
+        "clinician_id"
+      ]
+    }
+  },
+  {
+    "name": "checkpoint_intake_next",
+    "description": "Get the next step after a clinician is chosen. First returns type visit (the app shows a card to choose a text visit now or book a video visit time). Then returns one detail the clinician needs at a time (type field: name, date of birth, location, phone, pharmacy, allergies, medications); the app collects each value in a secure field that goes straight to the clinician's practice, and you only learn that it was provided. Finally returns type consent.",
+    "input_schema": {
+      "type": "object",
+      "properties": {}
+    }
+  }
+]

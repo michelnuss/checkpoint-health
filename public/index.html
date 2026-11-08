@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Checkpoint Health, live demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bar:#0F2E24; --bar-ink:#E6EFEA; --bar-muted:#93ADA2;
+  --chat-bg:#FAF9F5; --chat-ink:#141413; --chat-muted:#73726C; --chat-line:#E8E6DC; --user-bubble:#F0EEE6; --rail:#F5F4EE; --accent:#D97757; --accent-ink:#C6613F;
+  --c-bg:#EBEFF1; --c-panel:#FFFFFF; --c-ink:#13191C; --c-muted:#5B6970; --c-line:#D7DEE2; --c-soft:#F5F7F8;
+  --green:#1C5741; --green-ink:#14402F; --green-soft:#E1EFE7;
+  --red:#B3372A; --red-soft:#F9E6E2;
+  --amber:#8A5A00; --amber-soft:#F7EDD6;
+  --chat-font:"Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+  --serif:"Source Serif 4", ui-serif, Georgia, Cambria, serif;
+  --c-font:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--chat-font);color:var(--chat-ink);background:var(--c-bg);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* Presenter bar */
+.bar{background:var(--bar);color:var(--bar-ink);display:flex;align-items:center;gap:14px;padding:8px 16px;font-family:var(--c-font);font-size:13.5px;flex-wrap:wrap;flex:none}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:.01em}
+.brand svg{flex:none}
+.bar .note{color:var(--bar-muted);font-size:13px}
+.bar .spacer{flex:1}
+.ctl{display:flex;align-items:center;gap:8px;color:var(--bar-muted)}
+.ctl select{background:#183F32;color:var(--bar-ink);border:1px solid #2A5646;border-radius:6px;padding:6px 8px;font:inherit}
+.seg{display:inline-flex;border:1px solid #2A5646;border-radius:7px;overflow:hidden}
+.seg button{background:transparent;color:var(--bar-muted);border:0;padding:6px 12px}
+.seg button[aria-pressed="true"]{background:#2A5646;color:#fff}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
+.btn-bar{background:#E6EFEA;color:var(--bar);border:0;border-radius:7px;padding:7px 14px;font-weight:600}
+.btn-bar.ghost{background:transparent;color:var(--bar-ink);border:1px solid #2A5646}
+.livedot{width:8px;height:8px;border-radius:50%;background:#6B7F77;display:inline-block}
+.livedot.on{background:#5FD39A}
+
+/* Split */
+.split{flex:1;display:grid;grid-template-columns:minmax(380px,44fr) minmax(480px,56fr);min-height:0;overflow:hidden}
+@media (max-width:1050px){.split{grid-template-columns:1fr}}
+
+/* ---------- CHAT (Claude-style) ---------- */
+.chat{background:var(--chat-bg);display:grid;grid-template-columns:52px 1fr;min-height:0;border-right:1px solid var(--c-line);height:100%;min-height:0}
+.rail{background:var(--rail);border-right:1px solid var(--chat-line);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px}
+.rail button{width:34px;height:34px;border-radius:8px;border:0;background:transparent;color:#5E5D59;display:grid;place-items:center}
+.rail button:hover{background:#E9E7DE}
+.rail .grow{flex:1}
+.rail .me{width:30px;height:30px;border-radius:50%;background:#3D3D3A;color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
+.cmain{display:flex;flex-direction:column;min-height:0;min-width:0;height:100%}
+.chat-head{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;height:52px}
+.ctitle{font-size:14px;color:var(--chat-ink);display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctitle:hover{background:#F0EEE6}
+.head-r{display:flex;gap:8px;align-items:center}
+.demo-badge{font-size:11.5px;color:var(--chat-muted);border:1px solid var(--chat-line);border-radius:6px;padding:3px 7px;background:#fff}
+.sharebtn{font-size:13px;border:1px solid var(--chat-line);background:#fff;border-radius:8px;padding:6px 12px;color:var(--chat-ink)}
+.thread{flex:1;overflow-y:auto;scroll-behavior:smooth}
+.col{max-width:680px;margin:0 auto;padding:18px 24px 12px}
+.empty{text-align:center;margin-top:20vh}
+.empty strong{display:block;font-family:var(--serif);font-weight:400;font-size:34px;color:#3D3D3A;letter-spacing:-.01em;margin-bottom:10px}
+.empty span{color:var(--chat-muted);font-size:14px}
+.msg{margin:0 0 20px;line-height:1.65;font-size:16px}
+.msg.user{margin-left:auto;background:var(--user-bubble);padding:10px 16px;border-radius:14px;width:fit-content;max-width:85%;font-size:15px;line-height:1.55}
+.msg.user.secure{background:#F0EEE6;color:var(--chat-ink);display:flex;gap:10px;align-items:flex-start}
+.msg.user.secure small{display:block;color:var(--chat-muted);font-size:12.5px}
+.msg.ai{font-family:var(--serif);font-size:16.5px;color:#1F1E1D}
+.msg.ai p{margin:0 0 12px}
+.msg.ai p:last-child{margin:0}
+.msg.ai ul,.msg.ai ol{margin:0 0 12px;padding-left:22px}.msg.ai li{margin:0 0 4px}.msg.ai li:last-child{margin:0}
+.msg.sys{font-size:13px;color:var(--chat-muted);text-align:center}
+.thinking{display:inline-flex;align-items:center;gap:8px;color:var(--chat-muted);font-family:var(--chat-font);font-size:14px}
+.pulse{width:14px;height:14px;border-radius:50%;background:var(--accent);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(.6);opacity:.55}50%{transform:scale(1);opacity:1}}
+details.tool{margin:0 0 14px;font-size:13.5px;border:1px solid var(--chat-line);border-radius:10px;background:#fff;max-width:100%}
+details.tool summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center;padding:9px 12px;color:#3D3D3A}
+details.tool summary::-webkit-details-marker{display:none}
+details.tool summary .ico{width:20px;height:20px;border-radius:5px;background:var(--green);display:grid;place-items:center;flex:none}
+details.tool summary b{font-weight:500}
+details.tool summary .fn{color:var(--chat-muted)}
+details.tool summary .chev{margin-left:auto;transition:transform .15s;color:var(--chat-muted)}
+details.tool[open] summary .chev{transform:rotate(90deg)}
+details.tool .io{border-top:1px solid var(--chat-line);padding:10px 12px}
+details.tool .io h5{margin:0 0 4px;font-size:11.5px;font-weight:500;color:var(--chat-muted)}
+details.tool pre{margin:0 0 10px;background:#FAF9F5;border:1px solid var(--chat-line);border-radius:8px;padding:9px;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;max-height:200px;overflow:auto;color:#3D3D3A}
+
+/* widgets (rendered inline by the Checkpoint connector) */
+.w{margin:0 0 22px}
+.w.done{opacity:.55;pointer-events:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid #DEDCD1;background:#fff;color:var(--chat-ink);border-radius:10px;padding:8px 13px;font-size:14px;transition:background .12s,border-color .12s}
+.chip:hover{background:#F5F4EE;border-color:#CFCCBF}
+.chip[aria-pressed="true"]{background:#141413;border-color:#141413;color:#fff}
+.chip.demo{position:relative}
+.chip.demo::after{content:"";position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:#7FB89C}
+.w .hint{font-size:12.5px;color:var(--chat-muted);margin-top:8px}
+.w .go{margin-top:10px;background:#141413;color:#fff;border:0;border-radius:10px;padding:8px 16px;font-size:14px}
+.w .go:disabled{opacity:.3;cursor:not-allowed}
+.card{border:1px solid var(--chat-line);border-radius:14px;overflow:hidden;background:#fff}
+.cardhead{display:flex;align-items:center;gap:8px;padding:9px 16px;font-size:12.5px;color:var(--chat-muted);border-bottom:1px solid var(--chat-line);background:#FDFDFB}
+.cardhead .ico{width:16px;height:16px;border-radius:4px;background:var(--green);display:grid;place-items:center}
+.clin{display:grid;grid-template-columns:40px 1fr auto;gap:12px;padding:14px 16px;border-top:1px solid var(--chat-line);align-items:center;text-align:left;background:#fff;width:100%;border-left:0;border-right:0;border-bottom:0;color:inherit}
+.cardhead + .clin{border-top:0}
+button.clin:hover{background:#FAF9F5}
+.clin.off{opacity:.5;cursor:default}
+.clin.picked{background:#F0EEE6}
+.avatar{width:40px;height:40px;border-radius:50%;background:#E3ECE7;color:var(--green-ink);display:grid;place-items:center;font-weight:600;font-size:14px;font-family:var(--chat-font)}
+.clin .nm{font-weight:600;font-size:15px}
+.clin .meta{font-size:13px;color:var(--chat-muted);line-height:1.45}
+.clin .price{text-align:right;font-size:18px;font-weight:600}
+.clin .price small{display:block;font-size:12px;font-weight:400;color:var(--chat-muted)}
+.cardfoot{padding:9px 16px;font-size:12px;color:var(--chat-muted);background:#FDFDFB;border-top:1px solid var(--chat-line)}
+.secure{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.secure .field{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;border:1px solid #DEDCD1;border-radius:10px;padding:0 6px 0 11px;background:#fff}
+.secure .field:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(28,87,65,.12)}
+.secure .field input{flex:1;min-width:0;border:0;outline:none;padding:10px 0;font:inherit;font-size:15px;background:transparent;letter-spacing:.06em}
+.secure .field input[type="password"]{letter-spacing:.18em}
+.secure .field input::placeholder{letter-spacing:normal}
+.secure .lock{display:grid;place-items:center;flex:none}
+.secure .eye{border:0;background:transparent;color:var(--chat-muted);font-size:12.5px;padding:6px 6px;border-radius:6px}
+.secure .eye:hover{background:#F5F4EE}
+.secure .send{background:var(--green);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:500}
+.lockline{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--green);margin-top:8px}
+.ghost{background:transparent;border:1px dashed #CFCCBF;color:var(--chat-muted);border-radius:8px;padding:6px 12px;font-size:13px}
+.consent{padding:16px}
+.consent h4{margin:0 0 2px;font-size:15px}
+.consent .sum{font-size:13.5px;color:var(--chat-muted);margin-bottom:12px}
+.consent label{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;padding:6px 0}
+.consent input{margin-top:3px;accent-color:var(--green);width:16px;height:16px}
+.pay{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--chat-line);margin-top:10px;padding-top:12px;font-size:14px}
+.pay .go{margin:0;background:var(--green);white-space:nowrap}
+.alert{border:1px solid #E7B9B1;background:var(--red-soft);border-radius:14px;padding:14px 16px;font-family:var(--chat-font)}
+.alert h4{margin:0 0 6px;color:var(--red);font-size:15px}
+.alert ul{margin:8px 0 0;padding:0;list-style:none}
+.alert li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #EDCFC9;font-size:14px}
+.alert li span{color:var(--chat-muted);font-size:13px;text-align:right}
+.shield{border:1px solid #CFDAD4;background:#F4F8F6;border-radius:12px;padding:10px 14px;font-size:13.5px;color:var(--green-ink);display:flex;gap:10px}
+.drmsg{border:1px solid #CFE0D6;background:#F5FAF7;border-radius:14px;padding:14px 16px;margin:0 0 20px}
+.drmsg .from{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.drmsg .from b{font-size:14.5px}
+.drmsg .from span{display:block;font-size:12.5px;color:var(--chat-muted)}
+.drmsg p{margin:0;line-height:1.6;font-size:15px;white-space:pre-wrap}
+.drmsg .rx{margin-top:10px;font-size:13px;color:var(--green);border-top:1px solid #DCE9E1;padding-top:8px}
+.composer{padding:6px 24px 14px}
+.composer form{max-width:680px;margin:0 auto;border:1px solid #DEDCD1;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(20,20,19,.04),0 4px 14px rgba(20,20,19,.04);padding:12px 12px 10px 16px}
+.composer textarea{width:100%;border:0;font:inherit;font-size:15.5px;outline:none;resize:none;background:transparent;color:var(--chat-ink);min-height:26px;max-height:140px}
+.composer textarea::placeholder{color:#8C8B85}
+.crow{display:flex;align-items:center;gap:6px;margin-top:6px}
+.crow .ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--chat-line);background:#fff;display:grid;place-items:center;color:#5E5D59}
+.crow .conn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--green-ink);border:1px solid #CFDAD4;background:#F4F8F6;border-radius:8px;padding:5px 9px}
+.crow .sp{flex:1}
+.crow .model{font-size:13px;color:#5E5D59;padding:6px 8px;border-radius:8px}
+.crow .send{width:32px;height:32px;border-radius:9px;border:0;background:var(--accent);display:grid;place-items:center}
+.crow .send:hover{background:var(--accent-ink)}
+.composer .fine{font-size:11.5px;color:var(--chat-muted);text-align:center;margin-top:8px}
+.err{color:var(--red);font-size:13.5px;font-family:var(--chat-font)}
+
+/* ---------- Claude question card ---------- */
+.askcard{border:1px solid var(--chat-line);border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(20,20,19,.03)}
+.askq{padding:14px 16px 12px;font-size:15px;font-weight:500;line-height:1.45;color:var(--chat-ink)}
+.askopt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#fff;border:0;border-top:1px solid var(--chat-line);padding:11px 16px;font-size:14.5px;color:var(--chat-ink);position:relative}
+.askopt:hover,.askopt.hov{background:#FAF9F5}
+.askopt .n{width:22px;height:22px;border-radius:6px;border:1px solid #DEDCD1;display:grid;place-items:center;font-size:12px;color:var(--chat-muted);flex:none;font-variant-numeric:tabular-nums}
+.askopt[aria-pressed="true"]{background:#F0EEE6}
+.askopt[aria-pressed="true"] .n{background:#141413;color:#fff;border-color:#141413}
+.askopt.demo::after{content:"";position:absolute;right:14px;top:50%;margin-top:-3.5px;width:7px;height:7px;border-radius:50%;background:#7FB89C}
+.askother{display:flex;gap:8px;border-top:1px solid var(--chat-line);padding:7px 8px 7px 16px;align-items:center}
+.askother input{flex:1;border:0;outline:none;font:inherit;font-size:14.5px;background:transparent;color:var(--chat-ink)}
+.askother input::placeholder{color:#8C8B85}
+.askother button{border:1px solid var(--chat-line);background:#fff;border-radius:8px;padding:5px 10px;font-size:13px;color:var(--chat-ink)}
+.askfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 12px 9px 16px;border-top:1px solid var(--chat-line);font-size:12.5px;color:var(--chat-muted)}
+.askfoot .go{margin:0}
+.w.ask.done .askcard{background:#FDFDFB}
+.viewswitch .sep{width:1px;background:#E8E6DC;margin:4px 3px}
+.viewswitch .play{color:var(--accent-ink);font-weight:500}
+.viewswitch .play[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+/* ---------- visit type, scheduling, video call ---------- */
+.vopt{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;background:#fff;border:0;border-top:1px solid var(--chat-line);padding:13px 16px;color:inherit}
+.cardhead + .vopt{border-top:0}
+.vopt:hover,.vopt.hov{background:#FAF9F5}
+.vopt[aria-pressed="true"]{background:#F0EEE6}
+.vopt .vi{width:36px;height:36px;border-radius:10px;background:#E3ECE7;display:grid;place-items:center;color:var(--green-ink)}
+.vopt b{font-size:15px;font-weight:600;display:block}
+.vopt small{display:block;font-size:13px;color:var(--chat-muted);margin-top:1px}
+.vopt .price{font-size:17px;font-weight:600}
+.slots{padding:4px 16px 14px;border-top:1px solid var(--chat-line);background:#FDFDFB}
+.slots .day{font-size:12.5px;color:var(--chat-muted);margin:10px 0 6px}
+.slots .chips{gap:6px}
+.slots .chip{border-radius:8px;padding:7px 11px;font-size:13.5px}
+.slots .confirm{margin-top:12px;background:var(--green);color:#fff;border:0;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:500}
+.slots .confirm:disabled{opacity:.35;cursor:not-allowed}
+.appt{display:flex;gap:14px;align-items:center;padding:14px 16px}
+.appt .cal{width:46px;border-radius:9px;overflow:hidden;border:1px solid var(--chat-line);text-align:center;flex:none;font-family:var(--chat-font)}
+.appt .cal span{display:block;background:var(--green);color:#fff;font-size:10.5px;padding:2px 0;font-weight:600}
+.appt .cal b{display:block;font-size:17px;padding:3px 0 4px}
+.appt .t{font-size:15px;font-weight:600}
+.appt .s{font-size:13px;color:var(--chat-muted)}
+.appt .join{margin-left:auto;background:var(--green);color:#fff;border:0;border-radius:10px;padding:9px 14px;font-weight:500;white-space:nowrap}
+.appt .join:disabled{background:#E8E6DC;color:#8C8B85;cursor:default}
+.drmsg .zoom{display:flex;gap:12px;align-items:center;margin-top:12px;background:#fff;border:1px solid #DCE9E1;border-radius:10px;padding:10px 12px}
+.drmsg .zoom .zi{width:32px;height:32px;border-radius:8px;background:#2D6CDF;display:grid;place-items:center;flex:none}
+.drmsg .zoom b{display:block;font-size:14px}
+.drmsg .zoom span{display:block;font-size:13.5px;color:#2D6CDF}
+.drmsg .zoom small{display:block;font-size:12px;color:var(--chat-muted)}
+.appt .s.ok{color:var(--green);margin-top:2px}
+.call{position:fixed;inset:0;z-index:40;background:#111312;display:flex;flex-direction:column;color:#fff;font-family:var(--chat-font);animation:winin .25s ease-out}
+.call .stage{flex:1;display:grid;place-items:center;position:relative}
+.call .big{width:180px;height:180px;border-radius:50%;background:#2B3A33;display:grid;place-items:center;font-size:56px;font-weight:600;color:#CFE3D8}
+.call .who{position:absolute;left:24px;bottom:22px;font-size:15px}
+.call .who small{display:block;color:#9CA8A2;font-size:13px}
+.call .self{position:absolute;right:24px;bottom:22px;width:200px;height:130px;border-radius:12px;background:#2A2C2B;display:grid;place-items:center;font-size:28px;color:#C9CCCA;border:1px solid #3A3D3B}
+.call .top{display:flex;justify-content:space-between;padding:16px 24px;font-size:13.5px;color:#C9CCCA}
+.call .ctrls{display:flex;justify-content:center;gap:12px;padding:18px 0 26px}
+.call .ctrls button{width:48px;height:48px;border-radius:50%;border:0;background:#2A2C2B;color:#fff;display:grid;place-items:center}
+.call .ctrls .end{background:#C2412D;width:64px;border-radius:24px}
+.speaking{box-shadow:0 0 0 6px rgba(95,211,154,.25);animation:speak 1.6s ease-in-out infinite}
+@keyframes speak{50%{box-shadow:0 0 0 12px rgba(95,211,154,.12)}}
+
+/* ---------- WINDOWS ---------- */
+.viewswitch{position:fixed;left:64px;bottom:14px;z-index:15;display:inline-flex;background:#fff;border:1px solid #DEDCD1;border-radius:10px;padding:3px;gap:2px;box-shadow:0 2px 10px rgba(20,20,19,.08);font-family:var(--chat-font)}
+.viewswitch button{border:0;background:transparent;color:#5E5D59;font-size:12.5px;padding:6px 10px;border-radius:7px;position:relative}
+.viewswitch button[aria-pressed="true"]{background:#141413;color:#fff}
+.viewswitch button:disabled{opacity:.4;cursor:default}
+.viewswitch button.ping::after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.offline{margin:22px auto 0;max-width:460px;font-size:13.5px;color:#5E5D59;line-height:1.55;border:1px solid var(--chat-line);background:#fff;border-radius:12px;padding:12px 14px}
+.offline b{color:var(--red);font-weight:600}
+.ghostbtn{margin-top:8px;background:transparent;border:1px solid #DEDCD1;border-radius:8px;padding:6px 10px;font-size:13px;color:var(--chat-ink)}
+.model.off{color:var(--red)}
+body.v-patient .split, body.v-clinician .split{grid-template-columns:1fr}
+body.v-patient .console{display:none}
+body.v-clinician .chat{display:none}
+body.v-clinician .console{animation:winin .28s ease-out}
+body.v-patient .chat{animation:winin .28s ease-out;border-right:0}
+@keyframes winin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+body.v-clinician .c-body{padding:20px 32px 28px;max-width:1280px;margin:0 auto;width:100%}
+.seg button.ping{position:relative}
+.seg button.ping::after{content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#F2B84B}
+.toast{position:fixed;right:22px;top:16px;z-index:20;background:#13191C;color:#fff;border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);font-family:var(--c-font);font-size:14px;max-width:420px;animation:winin .25s ease-out}
+.toast small{display:block;color:#AEB9BF;font-size:12.5px;margin-top:2px}
+.toast button{background:#E6EFEA;color:#0F2E24;border:0;border-radius:8px;padding:8px 12px;font-weight:600;white-space:nowrap}
+.toast .x{background:transparent;color:#AEB9BF;padding:4px 6px}
+
+/* ---------- CONSOLE ---------- */
+.console{font-family:var(--c-font);color:var(--c-ink);display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden}
+.c-head{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--c-panel);border-bottom:1px solid var(--c-line);gap:12px;flex-wrap:wrap}
+.c-head .t{font-weight:600;font-size:15px}
+.c-head .doc{color:var(--c-muted);font-size:13px}
+.view{display:inline-flex;border:1px solid var(--c-line);border-radius:7px;overflow:hidden;font-size:13px}
+.view button{border:0;background:#fff;color:var(--c-muted);padding:6px 11px}
+.view button[aria-pressed="true"]{background:var(--c-ink);color:#fff}
+.c-body{flex:1;overflow-y:auto;padding:16px 20px 24px}
+.queue{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto}
+.q{flex:none;background:var(--c-panel);border:1px solid var(--c-line);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--c-muted);min-width:170px}
+.q b{display:block;color:var(--c-ink);font-weight:500;font-size:13px}
+.q.active{border-color:var(--green);box-shadow:inset 3px 0 0 var(--green)}
+.q .id{font-family:var(--mono);font-size:11.5px}
+.case{background:var(--c-panel);border:1px solid var(--c-line);border-radius:10px}
+.case-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 18px;border-bottom:1px solid var(--c-line)}
+.case-top h2{margin:0;font-size:21px;font-weight:600}
+.case-top .demo{color:var(--c-muted);font-size:13.5px;margin-top:3px}
+.case-top .right{text-align:right;font-size:12.5px;color:var(--c-muted);line-height:1.6}
+.case-top .id{font-family:var(--mono);font-size:12px}
+.pill{display:inline-block;font-size:12px;font-weight:500;padding:3px 9px;border-radius:999px;background:var(--c-soft);color:var(--c-muted);border:1px solid var(--c-line)}
+.pill.g{background:var(--green-soft);color:var(--green-ink);border-color:#BFD9CB}
+.pill.r{background:var(--red-soft);color:var(--red);border-color:#EDC4BC}
+.pill.a{background:var(--amber-soft);color:var(--amber);border-color:#E7D2A6}
+.grid{display:grid;grid-template-columns:1fr 1fr}
+@media (max-width:1300px){.grid{grid-template-columns:1fr}}
+.sec{padding:14px 18px;border-bottom:1px solid var(--c-line)}
+.grid .sec:nth-child(odd){border-right:1px solid var(--c-line)}
+@media (max-width:1300px){.grid .sec:nth-child(odd){border-right:0}}
+.sec.full{grid-column:1 / -1;border-right:0!important}
+.sec h3{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--c-muted)}
+.row{display:grid;grid-template-columns:132px 1fr;gap:10px;padding:5px 6px;margin:0 -6px;border-radius:5px;font-size:14px;line-height:1.4}
+.row .k{color:var(--c-muted);font-size:13px}
+.row .v.wait{color:#9AA6AC}
+.row .v .ok{color:var(--green);font-size:12.5px;margin-left:6px;white-space:nowrap}
+.row .v .bad{color:var(--red);font-size:12.5px;margin-left:6px}
+.masked{font-family:var(--mono);font-size:12.5px;background:#EEF1F3;border-radius:4px;padding:1px 6px;color:#3B4A52}
+.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%{background:#CFEBDC}100%{background:transparent}}
+table.scr{width:100%;border-collapse:collapse;font-size:13.5px}
+table.scr td{padding:6px 6px;border-top:1px solid #EDF0F2;vertical-align:top}
+table.scr tr:first-child td{border-top:0}
+table.scr td:first-child{color:var(--c-muted);width:34%}
+table.scr td:last-child{text-align:right;width:84px}
+.neg{font-size:13px;color:var(--c-muted);margin-top:8px;line-height:1.45}
+.dispo{font-size:16px;font-weight:600;margin:2px 0 4px}
+.dispo.g{color:var(--green)}.dispo.r{color:var(--red)}.dispo.a{color:var(--amber)}
+.quote{font-size:14px;line-height:1.5;border-left:3px solid var(--c-line);padding-left:10px;color:#2A3439}
+.draftwrap textarea{width:100%;min-height:128px;border:1px solid var(--c-line);border-radius:8px;padding:10px 12px;font:inherit;font-size:14px;line-height:1.5;resize:vertical;background:var(--c-soft);color:var(--c-ink)}
+.draftwrap textarea:not([readonly]){background:#fff;border-color:var(--green)}
+.plan{font-size:13.5px;line-height:1.55;margin-top:10px}
+.plan b{font-weight:600}
+.sim{font-size:12px;color:var(--amber)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px}
+.actions button{border:1px solid var(--c-line);background:#fff;color:var(--c-ink);border-radius:8px;padding:9px 14px;font-size:14px;font-weight:500}
+.actions .approve{background:var(--green);border-color:var(--green);color:#fff}
+.actions button:disabled{opacity:.4;cursor:not-allowed}
+.signed{padding:12px 18px;font-size:14px;color:var(--green-ink);background:var(--green-soft);border-top:1px solid #BFD9CB}
+.log{margin-top:14px;background:var(--c-panel);border:1px solid var(--c-line);border-radius:10px;padding:12px 18px}
+.log h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--c-muted)}
+.log ol{list-style:none;margin:0;padding:0;font-size:13px}
+.log li{display:grid;grid-template-columns:70px 1fr;gap:10px;padding:4px 0;border-top:1px solid #F0F2F4}
+.log li:first-child{border-top:0}
+.log time{font-family:var(--mono);font-size:12px;color:var(--c-muted)}
+.c-empty{background:var(--c-panel);border:1px dashed var(--c-line);border-radius:10px;padding:48px 28px;text-align:center;color:var(--c-muted);line-height:1.6}
+.c-empty b{display:block;color:var(--c-ink);font-size:17px;font-weight:500;margin-bottom:4px}
+.foot{font-size:11.5px;color:var(--c-muted);margin-top:12px}
+</style>
+</head>
+<body class="v-patient">
+
+
+
+
+<main class="split">
+  <section class="chat" aria-label="Claude conversation, demo">
+    <nav class="rail" aria-label="Sidebar">
+      <button aria-label="Open sidebar"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3.5" width="15" height="13" rx="2.5"/><path d="M7.5 3.5v13"/></svg></button>
+      <button aria-label="New chat" id="newchat"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/></svg></button>
+      <button aria-label="Chats"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5.5h12M4 10h12M4 14.5h8" stroke-linecap="round"/></svg></button>
+      <button aria-label="Projects"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6.5a2 2 0 012-2h3l1.5 1.5H15a2 2 0 012 2v6.5a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></button>
+      <span class="grow"></span>
+      <span class="me" title="Maria (synthetic patient)">M</span>
+    </nav>
+    <div class="cmain">
+      <div class="chat-head">
+        <div class="ctitle" id="ctitle">New chat</div>
+        <div class="head-r"><button class="sharebtn" id="topreset" title="Start a new demo chat">Reset demo</button></div>
+      </div>
+      <div class="thread" id="threadwrap"><div class="col" id="thread" aria-live="polite"></div></div>
+      <div class="composer">
+        <form id="composer">
+          <textarea id="input" rows="1" autocomplete="off" placeholder="Reply to Claude..." aria-label="Message Claude"></textarea>
+          <div class="crow">
+            <span class="ib" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></span>
+            <span class="ib" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" stroke-linecap="round"/><circle cx="10" cy="4.5" r="1.5"/><circle cx="6" cy="11.5" r="1.5"/></svg></span>
+            <span class="conn"><svg width="12" height="12" viewBox="0 0 20 20"><path d="M5 10.5l3.2 3.2L15 6.8" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Checkpoint</span>
+            <span class="sp"></span>
+            <span class="model">Sonnet 5.5</span>
+            <button class="send" aria-label="Send message"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </form>
+        <div class="fine">Demo with synthetic data. Claude can make mistakes, so Checkpoint's fixed rules and a licensed clinician make the medical calls.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="console" aria-label="Clinician console">
+    <div class="c-head">
+      <div><div class="t">Clinician console</div><div class="doc" id="docline">Florida practice, 3 clinicians online</div></div>
+      <div class="view" role="group" aria-label="Record view">
+        <button id="viewClin" aria-pressed="true">Clinician view</button>
+        <button id="viewAI" aria-pressed="false">What Claude saw</button>
+      </div>
+    </div>
+    <div class="c-body" id="console"></div>
+  </section>
+</main>
+<div class="viewswitch" role="group" aria-label="Switch view">
+  <button id="vPatient" aria-pressed="true">Claude</button>
+  <button id="vClin" aria-pressed="false">Clinician</button>
+  <span class="sep" aria-hidden="true"></span>
+  <button id="play" class="play" aria-pressed="false">Play demo</button>
+  <button id="resetbtn">Reset</button>
+  <button id="pausebtn" aria-pressed="false" disabled title="Pause or resume the Play demo">Pause</button>
+</div>
+
+<script src="engine.js"></script>
+<script>
+/* =========================================================
+   UI helpers
+   ========================================================= */
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "html") el.innerHTML = v;
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) el.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return el;
+}
+// Play demo pace: every pause in the scripted run is multiplied by this (1 = human speed, lower = faster).
+const DEMO_PACE = 0.55;
+// While the Play demo is paused, every scripted pause waits until it resumes.
+let paused = false;
+const sleep = ms => new Promise(r => setTimeout(r, mode === "scripted" ? ms * DEMO_PACE : ms))
+  .then(async () => { while (paused && mode === "scripted") await new Promise(r => setTimeout(r, 150)); });
+function setPaused(p) {
+  paused = p; const b = $("#pausebtn");
+  b.setAttribute("aria-pressed", p ? "true" : "false"); b.textContent = p ? "Resume" : "Pause";
+}
+const thread = $("#thread");
+const threadWrap = $("#threadwrap");
+function scrollDown() { threadWrap.scrollTop = threadWrap.scrollHeight; }
+function addEl(el) { thread.append(el); scrollDown(); return el; }
+function initials(name) { return name.replace(/^Dr\. /, "").split(/[\s-]+/).map(p => p[0]).slice(0, 2).join(""); }
+
+let busy = false;
+let mode = "live";
+let runToken = 0;
+
+function thinkingEl() { return h("div", { class: "msg ai" }, h("span", { class: "thinking", "aria-label": "Claude is thinking" }, h("span", { class: "pulse" }))); }
+// Streams a reply word by word, with the small bit of markdown Claude uses in chat:
+// paragraphs, "- " or "1. " lists, and **bold**. Text is added as text nodes, never as HTML.
+async function streamInto(el, text, token) {
+  el.replaceChildren();
+  let n = 0;
+  const words = async (target, line) => {
+    for (const part of line.split(/(\*\*[^*]+\*\*)/)) {
+      const bold = /^\*\*[^*]+\*\*$/.test(part);
+      const box = bold ? target.appendChild(h("b")) : target;
+      for (const w of (bold ? part.slice(2, -2) : part).split(/(\s+)/)) {
+        if (token !== runToken) return false;
+        box.append(w);
+        if (++n % 2 === 0) { if (n % 8 === 0) scrollDown(); await sleep(mode === "scripted" ? 22 : 12); }
+      }
+    }
+    return true;
+  };
+  for (const block of text.split(/\n\n+/)) {
+    const lines = block.split("\n").filter(l => l.trim());
+    const isList = lines.length && lines.every(l => /^\s*([-*•]|\d+[.)])\s+/.test(l));
+    if (isList) {
+      const list = el.appendChild(h(/^\s*\d/.test(lines[0]) ? "ol" : "ul"));
+      for (const l of lines) if (!(await words(list.appendChild(h("li")), l.replace(/^\s*([-*•]|\d+[.)])\s+/, "")))) return;
+    } else if (!(await words(el.appendChild(h("p")), lines.join(" ").replace(/^#+\s*/, "")))) return;
+  }
+  scrollDown();
+}
+async function aiSay(text, { tool, result, input } = {}) {
+  const token = runToken;
+  const think = addEl(thinkingEl());
+  await sleep(mode === "scripted" ? 500 : 0);
+  if (token !== runToken) return;
+  if (tool && !HIDDEN_TOOLS.has(tool)) { think.before(toolBlock(tool, input, result)); }
+  await sleep(mode === "scripted" ? 250 : 0);
+  if (token !== runToken) return;
+  if (!text) { think.remove(); return; }
+  await streamInto(think, text, token);
+}
+function toolBlock(name, input, result) {
+  return h("details", { class: "tool" },
+    h("summary", {}, h("span", { class: "ico", html: '<svg width="12" height="12" viewBox="0 0 20 20"><path d="M5 10.5l3.2 3.2L15 6.8" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' }),
+      h("b", {}, "Checkpoint"), h("span", { class: "fn" }, name),
+      h("span", { class: "chev", html: '<svg width="14" height="14" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>' })),
+    h("div", { class: "io" }, h("h5", {}, "Request"), h("pre", {}, JSON.stringify(input || {}, null, 2)), h("h5", {}, "Response"), h("pre", {}, JSON.stringify(result, null, 2))));
+}
+// Screener calls happen on every question, so their chips are hidden; the question cards already show Checkpoint at work.
+const HIDDEN_TOOLS = new Set(["screen_next"]);
+function toolChip(name, input, result) { if (!HIDDEN_TOOLS.has(name)) addEl(toolBlock(name, input, result)); }
+function userSay(text) { addEl(h("div", { class: "msg user" }, text)); }
+function userSecure(label) {
+  addEl(h("div", { class: "msg user secure" },
+    h("svg", { width: 14, height: 14, viewBox: "0 0 16 16", html: '<rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="#1C5741" stroke-width="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#1C5741" stroke-width="1.5"/>' }),
+    h("div", {}, label + " sent to Checkpoint", h("small", {}, "Shared with the clinician only, not with Claude"))));
+}
+function sysNote(text) { addEl(h("div", { class: "msg sys" }, text)); }
+function retire() { thread.querySelectorAll(".w:not(.done)").forEach(w => w.classList.add("done")); }
+
+/* =========================================================
+   WIDGETS (rendered from Checkpoint tool results)
+   ========================================================= */
+function cardHead(t) { return h("div", { class: "cardhead" }, h("span", { class: "ico", html: '<svg width="10" height="10" viewBox="0 0 20 20"><path d="M5 10.5l3.2 3.2L15 6.8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' }), t); }
+function widgetFor(step) {
+  if (!step) return null;
+  if (step.type === "question") return questionWidget(step);
+  if (step.type === "result") return step.disposition === "in_person" ? inPersonWidget() : connectWidget();
+  if (step.type === "clinicians") return clinicianWidget(step);
+  if (step.type === "field") return fieldWidget(DATA.intake.find(f => f.id === step.field_id));
+  if (step.type === "consent") return consentWidget();
+  if (step.type === "visit") return visitWidget(step);
+  return null;
+}
+function demoAnswer(qid) { return (S.sc.answers || {})[qid] || []; }
+/* Claude's own question card (the ask_user tool). Also used for Checkpoint's screener questions. */
+function askCard(input, { demo = [], hint = null, onAnswer }) {
+  const multi = !!input.multi_select;
+  const picked = new Set();
+  const w = h("div", { class: "w ask", "data-ask": "1" });
+  const go = h("button", { class: "go", disabled: true, onclick: () => finish([...picked]) }, "Submit");
+  function finish(vals) {
+    if (busy || !vals.length || w.classList.contains("done")) return;
+    w.querySelectorAll(".askopt").forEach(o => o.setAttribute("aria-pressed", vals.includes(o.dataset.label) ? "true" : "false"));
+    w.classList.add("done");
+    onAnswer(vals);
+  }
+  const opts = input.options.map((label, i) => h("button", {
+    class: "askopt" + (demo.includes(label) ? " demo" : ""), "data-label": label, "aria-pressed": "false",
+    onclick: e => {
+      if (!multi) return finish([label]);
+      const b = e.currentTarget, none = /^none of these$/i.test(label);
+      if (none) { picked.clear(); w.querySelectorAll(".askopt").forEach(o => o.setAttribute("aria-pressed", "false")); }
+      else { [...picked].filter(v => /^none of these$/i.test(v)).forEach(v => { picked.delete(v); w.querySelector(`[data-label="${CSS.escape(v)}"]`).setAttribute("aria-pressed", "false"); }); }
+      if (picked.has(label)) picked.delete(label); else picked.add(label);
+      b.setAttribute("aria-pressed", picked.has(label) ? "true" : "false");
+      go.disabled = picked.size === 0;
+    } }, h("span", { class: "n" }, String(i + 1)), h("span", {}, label)));
+  const other = h("input", { placeholder: "Something else", "aria-label": "Type a different answer",
+    onkeydown: e => { if (e.key === "Enter" && other.value.trim()) finish([other.value.trim()]); } });
+  w.append(h("div", { class: "askcard" },
+    h("div", { class: "askq" }, input.question),
+    opts,
+    h("div", { class: "askother" }, other, h("button", { onclick: () => other.value.trim() && finish([other.value.trim()]) }, "Send")),
+    multi || hint ? h("div", { class: "askfoot" }, h("span", {}, hint || "Pick all that apply"), multi ? go : null) : null));
+  return w;
+}
+function questionWidget(step) {
+  return askCard({ question: step.text, options: step.options, multi_select: step.multi }, {
+    demo: demoAnswer(step.question_id),
+    hint: `Safety question ${step.number} of ${step.of}, checked by Checkpoint's fixed rules`,
+    onAnswer: vals => Actions.answer(vals)
+  });
+}
+function connectWidget() {
+  const options = S.disposition === "video" ? ["Yes, video visit", "Not now"] : ["Text visit", "Video visit", "Not now"];
+  return askCard({ question: S.disposition === "video" ? "Want me to set up a video visit with a licensed clinician?" : "Would you like a text visit with a clinician, or a video visit?", options }, {
+    demo: [options[0]], onAnswer: vals => Actions.connect(!/not now/i.test(vals[0]), /video/i.test(vals[0]))
+  });
+}
+function inPersonWidget() {
+  return h("div", { class: "w info" }, h("div", { class: "alert" },
+    h("h4", {}, "Get seen in person tonight"),
+    h("div", { style: "font-size:14px;line-height:1.5" }, "If you feel very unwell, faint or confused, call 911."),
+    h("ul", {}, DATA.inPerson.map(p => h("li", {}, h("b", {}, p.name), h("span", {}, p.detail))))));
+}
+function clinicianWidget(step) {
+  const w = h("div", { class: "w" });
+  const card = h("div", { class: "card" }, cardHead("Checkpoint, clinicians licensed in Florida"), step.clinicians.map(c => {
+    const full = DATA.clinicians.find(x => x.id === c.id);
+    const inner = [
+      h("div", { class: "avatar" }, initials(full.name)),
+      h("div", {}, h("div", { class: "nm" }, c.name),
+        h("div", { class: "meta" }, c.specialty + ". Speaks " + c.languages.join(", ")),
+        h("div", { class: "meta" }, c.online ? `Online now, usually replies in ${c.typical_reply_min} min. ${full.rating} from ${full.visits.toLocaleString()} visits` : "Offline, next available " + c.next_available)),
+      h("div", { class: "price" }, "$" + c.price_usd, h("small", {}, c.visit + " visit"))
+    ];
+    if (!c.online) return h("div", { class: "clin off" }, inner);
+    return h("button", { class: "clin" + (S.sc.clinician === c.id ? " demo-pick" : ""), "data-id": c.id,
+      onclick: e => { e.currentTarget.classList.add("picked"); w.classList.add("done"); Actions.choose(c.id); } }, inner);
+  }), h("div", { class: "cardfoot" }, "Licensed in Florida. Cheapest first. Price is the full visit fee, set before you start."));
+  w.append(card);
+  return w;
+}
+function fieldWidget(f) {
+  const w = h("div", { class: "w", "data-field": f.id });
+  const demo = (S.sc.intake || {})[f.id];
+  const send = val => { if (busy || !String(val).trim()) return; w.classList.add("done"); Actions.field(f.id, String(val).trim()); };
+  let control;
+  if (f.type === "single") {
+    control = h("div", { class: "chips" }, f.options.map(o => h("button", { class: "chip" + (o === demo ? " demo" : ""), "data-label": o, onclick: () => send(o) }, o)));
+  } else {
+    // Masked like a password: the patient sees dots while typing, nothing lands in the chat.
+    const inp = h("input", { type: "password", placeholder: f.placeholder || f.label, "aria-label": f.label + " (hidden while typing)",
+      autocomplete: "off", "data-lpignore": "true", "data-1p-ignore": "true", spellcheck: "false",
+      onkeydown: e => { if (e.key === "Enter") send(inp.value); } });
+    const eye = h("button", { class: "eye", type: "button", "aria-label": "Show what you typed", "aria-pressed": "false", onclick: () => {
+      const show = inp.type === "password"; inp.type = show ? "text" : "password";
+      eye.setAttribute("aria-pressed", show ? "true" : "false"); eye.textContent = show ? "Hide" : "Show"; inp.focus();
+    } }, "Show");
+    control = h("div", { class: "secure" }, h("div", { class: "field" }, h("span", { class: "lock", html: '<svg width="14" height="14" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="#1C5741" stroke-width="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#1C5741" stroke-width="1.5"/></svg>' }), inp, eye),
+      h("button", { class: "send", onclick: () => send(inp.value) }, "Send securely"));
+    w.append(control);
+    const extras = h("div", { class: "chips", style: "margin-top:8px" });
+    if (demo) extras.append(h("button", { class: "ghost", "data-demo": "1", onclick: () => { inp.value = demo; inp.focus(); } }, "Fill demo answer"));
+    if (f.skip) extras.append(h("button", { class: "ghost", onclick: () => send(f.skip) }, f.skip));
+    if (extras.childNodes.length) w.append(extras);
+    w.append(h("div", { class: "lockline" }, "Goes to the clinician's practice only. Claude sees that it was provided, not what it says."));
+    return w;
+  }
+  w.append(control);
+  w.append(h("div", { class: "lockline" }, "Goes to the clinician's practice only."));
+  return w;
+}
+const ICON_TEXT = '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4.5h12a1.5 1.5 0 011.5 1.5v7a1.5 1.5 0 01-1.5 1.5H9l-3.5 3v-3H4A1.5 1.5 0 012.5 13V6A1.5 1.5 0 014 4.5z" stroke-linejoin="round"/></svg>';
+const ICON_VIDEO = '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="5" width="11" height="10" rx="2"/><path d="M13.5 9l4-2.5v7l-4-2.5" stroke-linejoin="round"/></svg>';
+function visitWidget(step) {
+  const c = Engine.clinician();
+  const w = h("div", { class: "w", "data-visit": "1" });
+  const text = step.options.find(o => o.visit === "text"), video = step.options.find(o => o.visit === "video");
+  let slotBox = null, picked = null;
+  const card = h("div", { class: "card" }, cardHead("Checkpoint, how to see " + c.short));
+  if (text) card.append(h("button", { class: "vopt", "data-visit": "text", onclick: () => { w.classList.add("done"); Actions.visit("text"); } },
+    h("span", { class: "vi", html: ICON_TEXT }),
+    h("span", {}, h("b", {}, "Text visit, now"), h("small", {}, `${c.short} reviews your answers and replies here, usually in ${c.reply} min`)),
+    h("span", { class: "price" }, "$" + text.price_usd)));
+  const vbtn = h("button", { class: "vopt", "data-visit": "video", onclick: () => {
+      vbtn.setAttribute("aria-pressed", "true");
+      if (!slotBox) { slotBox = slots(); vbtn.after(slotBox); slotBox.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+    } },
+    h("span", { class: "vi", html: ICON_VIDEO }),
+    h("span", {}, h("b", {}, "Video visit, pick a time"), h("small", {}, "Face to face on your phone, about 10 minutes")),
+    h("span", { class: "price" }, "$" + video.price_usd));
+  if (video.now) card.append(h("button", { class: "vopt", "data-visit": "video-now", onclick: () => { w.classList.add("done"); Actions.visit("video", "now"); } },
+    h("span", { class: "vi", html: ICON_VIDEO }),
+    h("span", {}, h("b", {}, "Video visit, now"), h("small", {}, `${c.short} is online and joins on Zoom in a few minutes`)),
+    h("span", { class: "price" }, "$" + video.price_usd)));
+  card.append(vbtn);
+  function slots() {
+    const confirm = h("button", { class: "confirm", disabled: true, onclick: () => { if (!picked) return; w.classList.add("done"); Actions.visit("video", picked); } }, "Book video visit");
+    const group = (label, list) => [h("div", { class: "day" }, label), h("div", { class: "chips" }, list.map(t =>
+      h("button", { class: "chip" + ((S.sc.slot === t) ? " demo" : ""), "data-slot": t, "aria-pressed": "false", onclick: e => {
+        picked = t; w.querySelectorAll("[data-slot]").forEach(b => b.setAttribute("aria-pressed", b.dataset.slot === t ? "true" : "false"));
+        confirm.disabled = false; confirm.textContent = "Book video visit, " + t.replace(/^Tonight /, "tonight ").replace(/^Tomorrow /, "tomorrow ");
+      } }, t.replace(/^(Tonight|Tomorrow) /, ""))))];
+    return h("div", { class: "slots" },
+      group("Tonight", video.slots.filter(t => t.startsWith("Tonight"))),
+      group("Tomorrow morning", video.slots.filter(t => t.startsWith("Tomorrow"))),
+      confirm);
+  }
+  card.append(h("div", { class: "cardfoot" }, step.video_reason === "needed" ? "Your answers need a video visit rather than text."
+    : step.video_reason === "patient_asked" ? "Video, as you asked. With a clinician licensed in Florida. Price is the full fee."
+    : "All options are with a clinician licensed in Florida. Price is the full fee."));
+  w.append(card);
+  return w;
+}
+// Synthetic Zoom meeting for the booked video visit (display only, not a real meeting)
+const ZOOM = { url: "zoom.us/j/82419931042", id: "824 1993 1042", passcode: "7731" };
+function endTime(slot) {
+  const m = /(\d+):(\d+) (AM|PM)/.exec(slot); if (!m) return "";
+  let mm = +m[2] + 10, hh = +m[1]; if (mm >= 60) { mm -= 60; hh = hh % 12 + 1; }
+  return `${hh}:${String(mm).padStart(2, "0")} ${m[3]}`;
+}
+function zoomMessage() {
+  const c = Engine.clinician();
+  const when = S.slot.replace(/^Tonight/, "tonight").replace(/^Tomorrow/, "tomorrow");
+  return h("div", { class: "drmsg" },
+    h("div", { class: "from" }, h("div", { class: "avatar" }, initials(c.name)), h("div", {}, h("b", {}, c.name + ", " + c.cred), h("span", {}, "Sent through Checkpoint"))),
+    h("p", {}, `Hi ${firstName()}, it's ${c.short}. Here's my Zoom link for our video visit ${when}. Join a couple of minutes early so we can start on time. See you then.`),
+    h("div", { class: "zoom" },
+      h("span", { class: "zi", html: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6"><rect x="2.5" y="5" width="11" height="10" rx="2"/><path d="M13.5 9l4-2.5v7l-4-2.5" stroke-linejoin="round"/></svg>' }),
+      h("div", {}, h("b", {}, "Zoom meeting"), h("span", {}, ZOOM.url), h("small", {}, `Meeting ID ${ZOOM.id}, passcode ${ZOOM.passcode} (demo)`))));
+}
+function apptCard() {
+  const c = Engine.clinician();
+  const [day, time] = [S.slot.split(" ")[0], S.slot.split(" ").slice(1).join(" ")];
+  const join = h("button", { class: "join", disabled: !S.videoStarted, onclick: () => openCall() }, S.videoStarted ? "Join on Zoom" : "Opens at " + time);
+  const el = h("div", { class: "w info appt-w" }, h("div", { class: "card" }, cardHead("Checkpoint, added to your Google Calendar"),
+    h("div", { class: "appt" },
+      h("div", { class: "cal" }, h("span", {}, day === "Tonight" ? "TODAY" : "TMRW"), h("b", {}, time.split(":")[0])),
+      h("div", {}, h("div", { class: "t" }, "Video visit with " + c.name),
+        h("div", { class: "s" }, `${day}, ${time} to ${endTime(S.slot)}. Zoom link in the invite.`),
+        h("div", { class: "s ok" }, "✓ Invite sent to your Google Calendar, reminder 10 minutes before")),
+      join)));
+  el.joinBtn = join;
+  return el;
+}
+async function videoBooked() {
+  const c = Engine.clinician();
+  log("Zoom meeting created for " + S.slot + " (demo)");
+  await sleep(1400);
+  addEl(zoomMessage());
+  log("Zoom link sent to patient on behalf of " + c.name);
+  await sleep(1200);
+  addEl(apptEl);
+  log("Calendar invite added to patient's Google Calendar (demo)");
+  renderConsole();
+}
+let apptEl = null;
+function openCall() {
+  const c = Engine.clinician();
+  log("Patient joined the video visit");
+  const t0 = Date.now();
+  const timer = h("span", {}, "00:00");
+  const tick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); timer.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }, 1000);
+  const end = () => { clearInterval(tick); call.remove(); log("Video visit ended"); if (apptEl) { apptEl.joinBtn.disabled = true; apptEl.joinBtn.textContent = "Visit ended"; } sysNote("Video visit with " + c.name + " ended. Her note and any prescription will appear here.".replace("Her note", c.id === "clin_laurent" ? "His note" : "Her note")); renderConsole(); };
+  const call = h("div", { class: "call", role: "dialog", "aria-label": "Video visit" },
+    h("div", { class: "top" }, h("span", {}, "Zoom meeting " + ZOOM.id + " with " + c.name + " (demo)"), timer),
+    h("div", { class: "stage" },
+      h("div", { class: "big speaking" }, initials(c.name)),
+      h("div", { class: "who" }, c.name + ", " + c.cred, h("small", {}, "Licensed in Florida")),
+      h("div", { class: "self" }, firstName()[0] || "M")),
+    h("div", { class: "ctrls" },
+      h("button", { "aria-label": "Mute", html: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6"><rect x="7.5" y="2.5" width="5" height="10" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0011 0M10 15v2.5"/></svg>' }),
+      h("button", { "aria-label": "Camera", html: ICON_VIDEO.replace(/currentColor/g, "#fff") }),
+      h("button", { class: "end", "aria-label": "End call", onclick: end, html: '<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M3 14.5c4.9-4.4 13.1-4.4 18 0l-2.3 2.6-3.6-1.4v-2.4a12 12 0 00-6.2 0v2.4l-3.6 1.4z"/></svg>' })));
+  document.body.append(call);
+}
+function consentWidget() {
+  const c = Engine.clinician();
+  const w = h("div", { class: "w" });
+  const items = [
+    ["tele", "I consent to a telehealth " + (Engine.isVideo() ? "video" : "text") + " visit with " + c.name + ", " + c.cred + ", a clinician licensed in Florida.", true],
+    ["ai", "I understand Claude collected my answers, and a licensed clinician makes every medical decision.", true],
+    ["share", "Share my answers and details with " + c.short + "'s practice.", true],
+    ["followup", "Check in with me in 72 hours (optional).", false]
+  ];
+  const boxes = {};
+  const sendBtn = h("button", { class: "go", disabled: true, onclick: () => {
+    if (busy) return;
+    w.classList.add("done");
+    Actions.consent(Object.fromEntries(Object.entries(boxes).map(([k, b]) => [k, b.checked])));
+  } }, (S.visitType === "video" ? "Book and send to " : "Send to ") + c.short);
+  const update = () => { sendBtn.disabled = !items.filter(i => i[2]).every(i => boxes[i[0]].checked); };
+  w.append(h("div", { class: "card" }, cardHead("Checkpoint, secure handoff"), h("div", { class: "consent" },
+    h("h4", {}, "Review and send"),
+    h("div", { class: "sum" }, (Engine.isVideo() ? "Video visit " + (S.slot ? S.slot.replace(/^Tonight/, "tonight").replace(/^Tomorrow/, "tomorrow") + " " : "") : "Text visit ") + "with " + c.name + ", " + c.cred + ". " + Object.keys(S.intake).length + " details captured securely."),
+    items.map(([k, label, req]) => h("label", {}, boxes[k] = h("input", { type: "checkbox", "data-k": k, onchange: update }), h("span", {}, label))),
+    h("div", { class: "pay" }, h("span", {}, h("b", {}, "$" + Engine.price()), " on test card ending 4242. Charged only if the clinician takes your case."), sendBtn))));
+  return w;
+}
+
+/* =========================================================
+   ACTIONS: same buttons, two brains (scripted or live Claude)
+   ========================================================= */
+const INJECTION = /ignore (all |your |the )?(previous |prior )?(instructions|rules)|skip the (questions|screen)|system prompt|oxycodone|percocet|adderall|xanax|hydrocodone|fentanyl/i;
+
+const Actions = {
+  async opener(text) {
+    if (busy) return;
+    userSay(text);
+    if (!S.complaint) { S.complaint = text; $("#ctitle").textContent = /back|side/i.test(text) ? "Burning when urinating and back pain" : "Burning when urinating, what to do"; log("Claude handed off through Checkpoint MCP"); renderConsole(); }
+    if (mode === "live") return Live.send(text);
+    busy = true;
+    const step = Engine.screenNext();
+    await aiSay("Burning when you pee is often a bladder infection, and it's usually quick to treat. I can't diagnose you, but I can connect you with a licensed clinician in Florida tonight through Checkpoint. First, a few quick safety questions.",
+      { tool: "start_screening", input: { complaint: text, state: "FL" }, result: step });
+    addEl(widgetFor(step)); renderConsole(); busy = false;
+  },
+  async free(text) {
+    if (busy) return;
+    if (INJECTION.test(text)) return this.injection(text);
+    if (mode === "live") { userSay(text); return Live.send(text); }
+    if (S.phase === "idle") return this.opener(text);
+    userSay(text);
+    if (S.phase === "screening") return this.answer(null, text);
+    busy = true;
+    await aiSay("Use the options above so Checkpoint can record your answer exactly. You can also type it, and I'll match it to an option.");
+    busy = false;
+  },
+  async injection(text) {
+    userSay(text);
+    S.injectionCount++;
+    log("Injection attempt in patient text: ignored and logged");
+    renderConsole();
+    addEl(h("div", { class: "w info" }, h("div", { class: "shield" },
+      h("svg", { width: 18, height: 18, viewBox: "0 0 20 20", html: '<path d="M10 2l6 2.5v5c0 4-2.7 6.9-6 8.5-3.3-1.6-6-4.5-6-8.5v-5L10 2z" fill="none" stroke="#1C5741" stroke-width="1.6"/><path d="M7 10l2 2 4-4" stroke="#1C5741" stroke-width="1.6" fill="none"/>' }),
+      h("div", {}, h("b", {}, "Checkpoint blocked an instruction in the patient's message."), h("div", {}, "Patient text is treated as data. Screening can't be skipped, and controlled substances are out of scope.")))));
+    if (mode === "live") return Live.send(text);
+    busy = true;
+    await aiSay("I can't skip the safety questions, and Checkpoint never arranges controlled substances like oxycodone. If you're in severe pain, call 911.\n\nWe can keep going with the questions above.");
+    busy = false;
+  },
+  async answer(labels, typed) {
+    if (busy) return;
+    const text = typed || labels.join(", ");
+    if (labels) userSay(text);
+    if (mode === "live") return Live.send(text);
+    busy = true;
+    const step = Engine.screenNext(text);
+    renderConsole();
+    if (step.error) { await aiSay("I couldn't match that to an option. Could you pick one of these?", { tool: "screen_next", input: { answer: text }, result: step }); addEl(widgetFor(step)); busy = false; return; }
+    if (step.type === "question") {
+      const lead = { red: "", duration: "Good, none of those.", recurrent: "", other: "Okay, last one." }[step.question_id] || "";
+      await aiSay(lead, { tool: "screen_next", input: { answer: text }, result: step });
+      addEl(widgetFor(step));
+    } else if (step.disposition === "in_person") {
+      const kidney = S.red.includes("Fever or chills") || S.red.includes("Flank pain");
+      await aiSay("Please don't wait for a text visit. " + (kidney ? "Fever or back pain with these symptoms can mean the infection has reached your kidneys." : "What you described needs a clinician to examine you.") + " You should be seen in person tonight.",
+        { tool: "screen_next", input: { answer: text }, result: step });
+      addEl(widgetFor(step));
+    } else {
+      const msg = step.disposition === "video"
+        ? "Thanks. Nothing you've said needs the ER, but a clinician should see you on video rather than by text."
+        : `Thanks. This seems like ${DATA.protocol.likely}, which a licensed clinician can usually treat by text. Only a clinician can confirm it.`;
+      await aiSay(msg, { tool: "screen_next", input: { answer: text }, result: step });
+      addEl(widgetFor(step));
+    }
+    renderConsole(); busy = false;
+  },
+  async connect(yes, video) {
+    if (busy) return;
+    const said = yes ? (video ? "Video visit" : "Text visit") : "Not now";
+    userSay(said);
+    if (mode === "live") return Live.send(said);
+    busy = true;
+    if (!yes) { await aiSay("Okay. If it gets worse, or you get a fever or back pain, get seen in person."); busy = false; return; }
+    const step = Engine.listClinicians(video ? "video" : undefined);
+    await aiSay("These clinicians are licensed in Florida and online now, cheapest first. Pick one and I'll pass your answers along.", { tool: "list_clinicians", input: video ? { visit: "video" } : {}, result: step });
+    addEl(widgetFor(step)); renderConsole(); busy = false;
+  },
+  async ask(text) {
+    if (busy) return;
+    userSay(text);
+    return Live.send(text);
+  },
+  async choose(id) {
+    if (busy) return;
+    const c = DATA.clinicians.find(x => x.id === id);
+    userSay("I'll go with " + c.name);
+    if (mode === "live") return Live.send("I'll go with " + c.name + " (" + c.id + ")");
+    busy = true;
+    const sel = Engine.selectClinician(id);
+    renderConsole();
+    const step = Engine.intakeNext();
+    await aiSay(step.options.length > 1 ? `How would you like to see ${c.short}: a text visit now, or a video visit now or at a time you pick?` : `${c.short} will see you by video. Start now or pick a time that works.`,
+      { tool: "select_clinician", input: { clinician_id: id }, result: sel });
+    addEl(widgetFor(step)); busy = false;
+  },
+  async visit(type, slot) {
+    if (busy) return;
+    const res = Engine.chooseVisit(type, slot);
+    if (res.type === "error") return toast("Couldn't book that", res.message, "OK", hideToast);
+    const c = Engine.clinician();
+    slot = res.slot; // "now" becomes the current time
+    userSay(type === "video" ? (res.now ? "Video visit, now" : "Video visit, " + slot.replace(/^Tonight/, "tonight").replace(/^Tomorrow/, "tomorrow")) : "Text visit now");
+    renderConsole();
+    if (mode === "live") return Live.send(type === "video" ? (res.now ? `[Booked a video visit with ${c.name} for right now, ${slot}]` : `[Booked a video visit with ${c.name} for ${slot}]`) : "[Chose a text visit now]");
+    busy = true;
+    const step = Engine.intakeNext();
+    const lead = type === "video" ? `Booked for ${slot.replace(/^Tonight/, "tonight").replace(/^Tomorrow/, "tomorrow")}. ` : "";
+    await aiSay(`${lead}${c.short} needs a few details to treat you. Each answer goes straight to her practice through Checkpoint. I only see that you answered, not what you wrote.\n\n${step.ask}`.replace("her practice", c.id === "clin_laurent" ? "his practice" : "her practice"),
+      { tool: "choose_visit", input: { visit: type, slot: slot || null }, result: res });
+    addEl(widgetFor(step)); busy = false;
+  },
+  async field(id, value) {
+    if (busy) return;
+    const f = DATA.intake.find(x => x.id === id);
+    Engine.recordIntake(id, value);
+    userSecure(f.label);
+    renderConsole();
+    if (mode === "live") return Live.send(`[${f.label} provided securely to Checkpoint]`);
+    busy = true;
+    const step = Engine.intakeNext();
+    let lead = "";
+    if (id === "dob") { const a = age(value); lead = a != null ? "" : ""; }
+    if (id === "address") lead = inFlorida(value) ? "You're in Florida, so you're covered. " : "That address isn't in Florida. A Florida-licensed clinician can only treat you while you're in Florida. ";
+    if (step.type === "field") {
+      await aiSay(lead + step.ask, { tool: "intake_next", input: {}, result: step });
+    } else {
+      await aiSay("That's everything. Review it and send it to " + Engine.clinician().short + ".", { tool: "intake_next", input: {}, result: step });
+    }
+    addEl(widgetFor(step)); busy = false;
+  },
+  async consent(boxes) {
+    if (busy) return;
+    Engine.submit(boxes);
+    userSay("Sent to " + Engine.clinician().short);
+    renderConsole();
+    setTimeout(caseSent, mode === "live" ? 2500 : 1800);
+    requestDraft();
+    if (S.visitType === "video") { apptEl = apptCard(); }
+    if (mode === "live") {
+      await Live.send(S.visitType === "video"
+        ? `[Patient consented. Checkpoint booked a video visit with ${Engine.clinician().name} for ${S.slot}, case ${S.caseId}. The clinician's Zoom link is being sent in this chat, and the visit was added to the patient's Google Calendar.]`
+        : `[Patient consented. Checkpoint sent case ${S.caseId} to ${Engine.clinician().name}.]`);
+      if (apptEl) { busy = true; await videoBooked(); busy = false; }
+      return;
+    }
+    busy = true;
+    const c = Engine.clinician();
+    if (S.visitType === "video") {
+      await aiSay(`You're booked. ${c.short} will see you on Zoom ${S.slot.replace(/^Tonight/, "tonight").replace(/^Tomorrow/, "tomorrow")}. Her link is coming right here, and I added the visit to your Google Calendar. If you get a fever or back pain before then, don't wait. Go to urgent care.`.replace("Her link", c.id === "clin_laurent" ? "His link" : "Her link"),
+        { tool: "submit_case", input: { case_id: S.caseId }, result: { type: "submitted", case_id: S.caseId, clinician: c.name, visit: "video", slot: S.slot, zoom: ZOOM.url, calendar: "google_calendar_invite_sent" } });
+      await videoBooked(); busy = false; return;
+    }
+    await aiSay(`Sent. ${c.short} usually replies in about ${c.reply} minutes, and her answer will appear right here. If anything changes, like a fever or back pain, don't wait. Go to urgent care.`.replace("her answer", c.id === "clin_laurent" ? "his answer" : "her answer"),
+      { tool: "submit_case", input: { case_id: S.caseId }, result: { type: "submitted", case_id: S.caseId, clinician: c.name, status: "waiting for review" } });
+    busy = false;
+  }
+};
+
+/* Claude asked a question with its own card. During screening, Checkpoint's rules own the options. */
+function liveAskCard(input) {
+  let opts = Array.isArray(input.options) ? input.options.map(String).slice(0, 6) : [];
+  let multi = !!input.multi_select, demo = [];
+  if (S.phase === "screening") {
+    const q = Engine.qPayload();
+    opts = q.options; multi = q.multi; demo = demoAnswer(q.question_id);
+  } else if (S.phase === "result" && S.disposition !== "in_person") {
+    // The connect question: Checkpoint owns the options, so video is always offered.
+    opts = S.disposition === "video" ? ["Yes, video visit", "Not now"] : ["Text visit", "Video visit", "Not now"]; multi = false;
+    demo = [opts[0]];
+  } else if (opts.some(o => /^yes/i.test(o))) demo = opts.filter(o => /^yes/i.test(o)).slice(0, 1);
+  if (opts.length < 2) opts = ["Yes", "No"];
+  return askCard({ question: String(input.question || "Which fits best?"), options: opts, multi_select: multi }, {
+    demo, hint: S.phase === "screening" ? "Safety question, checked by Checkpoint's fixed rules" : null,
+    onAnswer: vals => Actions.ask(vals.join(", "))
+  });
+}
+
+/* Claude drafts the clinician's reply from the masked case (server: prompts/clinician-draft.md) */
+async function requestDraft() {
+  S.draftStatus = "template";
+  if (mode !== "live") return;
+  S.draftStatus = "drafting"; renderConsole();
+  const c = Engine.clinician(), p = planLines(), token = runToken;
+  const payload = {
+    protocol: DATA.protocol.id + ", " + DATA.protocol.name,
+    disposition: S.disposition,
+    screener: Object.fromEntries(Object.entries(S.answers).map(([k, v]) => [DATA.questions.find(q => q.id === k).short, v.vals.join(", ")])),
+    clinician: c.name + ", " + c.cred,
+    plan: { assessment: p.dx, patient_rx: p.patientRx, required_drug: p.drug },
+    followup_72h: !!(S.consents && S.consents.followup)
+  };
+  try {
+    const r = await fetch("/api/draft", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ case: payload }) });
+    const j = await r.json();
+    if (!r.ok || !j.draft) throw new Error((j.error && j.error.message) || "no draft");
+    if (token !== runToken || S.phase !== "submitted") return;
+    const ta = $("#draft");
+    if (ta && !ta.readOnly) return; // clinician is already editing; keep their text
+    S.draft = unmask(j.draft); S.draftStatus = "claude";
+    log("Claude drafted the reply from the masked case");
+  } catch (e) { S.draftStatus = "template"; log("Draft fell back to the protocol template (" + e.message + ")"); }
+  renderConsole();
+}
+function unmask(t) {
+  const ph = ((S.intake.pharmacy || {}).value || "your pharmacy").split(",")[0];
+  return t.split("[PATIENT_NAME]").join(firstName()).split("[PHARMACY]").join(ph);
+}
+
+/* Clinician actions, from the console */
+const Doctor = {
+  approve() {
+    const ta = $("#draft"); const text = ta ? ta.value : S.draft;
+    const edited = text.trim() !== S.draft.trim();
+    S.signed = { at: Date.now(), text, edited };
+    S.phase = "answered"; S.answeredAt = Date.now();
+    log((edited ? "Clinician edited the AI draft, then " : "Clinician ") + "approved and signed");
+    log("e-Prescription sent to pharmacy (simulated)");
+    const c = Engine.clinician();
+    const mins = Math.max(1, Math.round((S.answeredAt - S.submittedAt) * CLOCK_SPEED / 60000));
+    sysNote(`${c.name} answered in ${mins} minute${mins > 1 ? "s" : ""}`);
+    addEl(h("div", { class: "drmsg" },
+      h("div", { class: "from" }, h("div", { class: "avatar" }, initials(c.name)), h("div", {}, h("b", {}, c.name + ", " + c.cred), h("span", {}, "Licensed in Florida, via Checkpoint"))),
+      h("p", {}, text),
+      h("div", { class: "rx" }, "Prescription sent to " + ((S.intake.pharmacy || {}).value || "your pharmacy").split(",")[0] + " (simulated for this demo)")));
+    renderConsole();
+    replySent();
+  },
+  edit() { const ta = $("#draft"); if (!ta) return; ta.readOnly = !ta.readOnly; if (!ta.readOnly) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } renderActions(); },
+  video() {
+    S.videoStarted = Date.now();
+    log("Clinician started the video visit");
+    const c = Engine.clinician();
+    if (!apptEl) { // a text visit upgraded to video
+      S.slot = S.slot || "Tonight " + fmtTime(); apptEl = apptCard(); addEl(apptEl);
+    }
+    apptEl.joinBtn.disabled = false; apptEl.joinBtn.textContent = "Join on Zoom";
+    sysNote(c.name + " opened the Zoom meeting and is waiting for you.");
+    renderConsole();
+    if (win !== "split") { $("#vPatient").classList.add("ping"); toast("Video visit started", c.name + " is waiting in the video room.", "Back to Claude", () => setWin("patient")); }
+  },
+  refer() {
+    log("Clinician referred patient to in-person care");
+    S.phase = "answered"; S.signed = { at: Date.now(), text: "refer", edited: false, refer: true };
+    sysNote(Engine.clinician().name + " recommends an in-person visit. You won't be charged.");
+    renderConsole(); replySent();
+  }
+};
+
+/* =========================================================
+   LIVE MODE: Claude calls Checkpoint tools over a local proxy
+   ========================================================= */
+const Live = {
+  messages: [],
+  // The system prompt and tool definitions live on the server (prompts/). The browser only sends the conversation.
+  run(name, input) {
+    if (name === "checkpoint_screen_next") return Engine.screenNext(input && input.answer);
+    if (name === "checkpoint_list_clinicians") return Engine.listClinicians(input && input.visit);
+    if (name === "checkpoint_select_clinician") return Engine.selectClinician(input.clinician_id);
+    if (name === "checkpoint_intake_next") return Engine.intakeNext();
+    return { type: "error", message: "Unknown tool" };
+  },
+  pending: null, // an ask_user card waiting for the patient's answer
+  async send(text) {
+    busy = true;
+    // A patient who asks for video gets video, whatever Claude passes to the tools.
+    if (/\bvideo\b/i.test(text) && ["result", "clinicians", "intake"].includes(S.phase) && !S.visitType && !S.wantsVideo) {
+      S.wantsVideo = true; log("Patient asked for a video visit");
+    }
+    const token = runToken;
+    thread.querySelectorAll(".w.ask:not(.done)").forEach(w => w.classList.add("done"));
+    if (this.pending) {
+      this.messages.push({ role: "user", content: [...this.pending.results, { type: "tool_result", tool_use_id: this.pending.askId, content: "Patient answered: " + text }] });
+      this.pending = null;
+    } else this.messages.push({ role: "user", content: text });
+    let widget = null, ask = null;
+    try {
+      for (let i = 0; i < 8; i++) {
+        const typing = addEl(thinkingEl());
+        const res = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ messages: this.messages }) });
+        typing.remove();
+        if (token !== runToken) return;
+        const data = await res.json();
+        if (!res.ok) throw new Error((data.error && (data.error.message || data.error)) || ("HTTP " + res.status));
+        this.messages.push({ role: "assistant", content: data.content });
+        const results = [];
+        let askBlock = null;
+        for (const b of data.content) {
+          if (b.type === "text" && b.text.trim()) { const el = addEl(h("div", { class: "msg ai" })); await streamInto(el, b.text.trim(), token); }
+          if (b.type === "tool_use" && b.name === "ask_user") { askBlock = b; continue; }
+          if (b.type === "tool_use") {
+            const out = this.run(b.name, b.input);
+            toolChip(b.name.replace("checkpoint_", ""), b.input, out);
+            const wd = widgetFor(out); if (wd) widget = { el: wd, kind: out.type === "question" || (out.type === "result" && out.disposition !== "in_person") ? "ask-like" : "connector" };
+            results.push({ type: "tool_result", tool_use_id: b.id, content: JSON.stringify(out) });
+            renderConsole();
+          }
+        }
+        if (askBlock) { this.pending = { askId: askBlock.id, results }; ask = askBlock.input; break; }
+        if (data.stop_reason !== "tool_use" || !results.length) break;
+        this.messages.push({ role: "user", content: results });
+      }
+      // Checkpoint's own cards (clinicians, secure fields, consent, in-person) always show.
+      // Its screener buttons show only if Claude didn't ask with its own question card.
+      if (widget && !(ask && widget.kind === "ask-like")) addEl(widget.el);
+      if (ask) addEl(liveAskCard(ask));
+    } catch (e) {
+      addEl(h("div", { class: "msg err" }, "Claude API error: " + e.message + ". Check the terminal running node server.js."));
+    } finally { busy = false; renderConsole(); }
+  }
+};
+
+/* =========================================================
+   CONSOLE RENDER
+   ========================================================= */
+let viewAI = false;
+let seen = new Set();
+function val(key, value, maskLabel, extra) {
+  if (value == null || value === "") return h("span", { class: "v wait" }, "Waiting for patient");
+  if (viewAI && maskLabel) return h("span", { class: "v" }, h("span", { class: "masked" }, maskLabel));
+  return h("span", { class: "v" }, value, extra || null);
+}
+function row(key, label, node) { const r = h("div", { class: "row", "data-k": key }, h("span", { class: "k" }, label), node); return r; }
+function renderConsole() {
+  const root = $("#console");
+  const c = Engine.clinician();
+  $("#docline").textContent = c ? `Signed in as ${c.name}, ${c.cred}. ${c.license}` : "Florida practice, 3 clinicians online";
+  const queue = h("div", { class: "queue" },
+    S.complaint ? h("div", { class: "q active" }, h("span", { class: "id" }, S.caseId), h("b", {}, S.disposition === "in_person" ? "Routed in person" : "Urinary symptoms"), statusText()) : null,
+    DATA.queue.map(q => h("div", { class: "q" }, h("span", { class: "id" }, q.id), h("b", {}, q.what), q.status)));
+  if (!S.complaint) {
+    root.replaceChildren(queue, h("div", { class: "c-empty" }, h("b", {}, "No new case yet"),
+      "When a patient's AI hands off through Checkpoint, the case builds here as they answer."), logBox());
+    seen = new Set(); return;
+  }
+  const a = S.intake;
+  const ag = a.dob ? age(a.dob.value) : null;
+  const name = a.name ? a.name.value : null;
+  const title = viewAI ? "[PATIENT_NAME]" : (name || "New patient");
+  const sex = S.answers.sex ? S.answers.sex.vals[0] : null;
+
+  const top = h("div", { class: "case-top" },
+    h("div", {}, h("h2", {}, title),
+      h("div", { class: "demo" }, [sex, ag != null ? (viewAI ? "age 30 to 39" : ag + " years") : null, a.address ? (inFlorida(a.address.value) ? "in Florida" : "outside Florida") : null].filter(Boolean).join(", ") || "Identity not collected yet")),
+    h("div", { class: "right" }, h("div", {}, statusPill()), h("div", { class: "id" }, S.caseId + "  ·  received " + fmtTime(S.t0)),
+      S.submittedAt && !S.answeredAt ? h("div", {}, "Waiting " + waitText()) : null));
+
+  // Screener
+  const negs = [];
+  const rows = DATA.questions.map(q => {
+    const ans = S.answers[q.id];
+    let pill = h("span", { class: "pill" }, "Pending");
+    if (ans) {
+      const isRed = q.id === "red" && ans.vals.some(v => v !== "None of these");
+      const isCaution = (q.id === "sex" && ans.vals[0] === "Male") || (q.id === "age" && ans.vals[0] !== "18 to 64") || (q.id === "duration" && ans.vals[0] === "More than 7 days") || (q.id === "recurrent" && ans.vals[0] === "3 or more") || (q.id === "other" && ans.vals.some(v => v !== "None of these"));
+      pill = isRed ? h("span", { class: "pill r" }, "Red flag") : isCaution ? h("span", { class: "pill a" }, "Review") : h("span", { class: "pill g" }, "Pass");
+      if (q.id === "red" || q.id === "other") q.options.forEach(o => { if (!o.none && !ans.vals.includes(o.label)) negs.push(o.neg); });
+    }
+    return h("tr", { "data-k": "q_" + q.id + (ans ? "_done" : "") }, h("td", {}, q.short), h("td", {}, ans ? ans.vals.join(", ") : h("span", { style: "color:#9AA6AC" }, "Not asked yet")), h("td", {}, pill));
+  });
+  const screener = h("div", { class: "sec" }, h("h3", {}, "Screener, " + DATA.protocol.id + " " + DATA.protocol.version),
+    h("table", { class: "scr" }, rows),
+    negs.length ? h("div", { class: "neg", "data-k": "negs" + negs.length }, "Denies " + negs.join(", ") + ".") : null);
+
+  const dispo = h("div", { class: "sec" }, h("h3", {}, "Reason for visit"),
+    h("div", { class: "quote", "data-k": "complaint" }, "“" + S.complaint + "”"),
+    h("div", { style: "margin-top:12px", "data-k": "dispo_" + (S.disposition || "none") },
+      S.disposition === "async" ? [h("div", { class: "dispo g" }, "Fits the text-visit protocol"), h("div", { class: "neg" }, DATA.protocol.name + ". No red flags.")]
+      : S.disposition === "video" ? [h("div", { class: "dispo a" }, "Eligible, video visit required"), h("div", { class: "neg" }, "Review: " + S.caution.join(", "))]
+      : S.disposition === "in_person" ? [h("div", { class: "dispo r" }, "Red flag, sent to in-person care"), h("div", { class: "neg" }, S.red.join(", ") + ". No clinician case was created.")]
+      : h("div", { class: "neg" }, "Screener in progress")));
+
+  const pharmacy = a.pharmacy ? a.pharmacy.value : null;
+  const patient = h("div", { class: "sec" }, h("h3", {}, "Patient"),
+    row("name" + !!a.name, "Legal name", val("name", name, "[PATIENT_NAME]")),
+    row("dob" + !!a.dob, "Date of birth", val("dob", a.dob && a.dob.value, "[DOB]", ag != null ? h("span", { class: ag >= 18 && ag <= 64 ? "ok" : "bad" }, (ag >= 18 && ag <= 64 ? "✓ " : "✗ ") + ag + ", matches screener") : null)),
+    row("address" + !!a.address, "Location", val("address", a.address && a.address.value, "[ADDRESS]", a.address ? h("span", { class: inFlorida(a.address.value) ? "ok" : "bad" }, inFlorida(a.address.value) ? "✓ Florida, license matches" : "✗ outside Florida") : null)),
+    row("phone" + !!a.phone, "Mobile", val("phone", a.phone && a.phone.value, "[PHONE]")));
+
+  const history = h("div", { class: "sec" }, h("h3", {}, "Medications and pharmacy"),
+    row("allergies" + !!a.allergies, "Allergies", val("allergies", a.allergies && a.allergies.value, "[ALLERGIES]")),
+    row("meds" + !!a.meds, "Medications", val("meds", a.meds && a.meds.value, "[MEDICATIONS]")),
+    row("pharmacy" + !!a.pharmacy, "Pharmacy", val("pharmacy", pharmacy, "[PHARMACY]")),
+    row("recurrent" + !!S.answers.recurrent, "Prior UTIs", val("recurrent", S.answers.recurrent && S.answers.recurrent.vals[0] + " in 12 months")));
+
+  const billing = h("div", { class: "sec" }, h("h3", {}, "Visit and payment"),
+    row("clin" + !!c, "Clinician", val("clin", c ? c.name + ", " + c.cred : null)),
+    row("visit" + (S.visitType || ""), "Visit type", val("visit", S.visitType === "video" ? "Video visit, " + (S.videoNow ? "right away (asked " + S.slot.replace(/^Tonight /, "") + ")" : S.slot) + ". Zoom " + ZOOM.id + ", on patient's Google Calendar" : S.visitType === "text" ? "Text visit, answer by message" : null)),
+    row("price" + !!c + (S.visitType || ""), "Visit fee", val("price", c && S.visitType ? "$" + Engine.price() + " flat. Clinician paid " + (S.visitType === "video" ? "$30" : "$20") + "." : null)),
+    row("card" + !!S.consents, "Payment", val("card", S.consents ? "$" + Engine.price() + " held on test card ending 4242" : null)));
+
+  const consents = h("div", { class: "sec" }, h("h3", {}, "Consents"),
+    S.consents ? [
+      row("c_tele", "Telehealth", h("span", { class: "v" }, "✓ Signed " + fmtTime(S.consents.at))),
+      row("c_ai", "AI disclosure", h("span", { class: "v" }, "✓ Acknowledged")),
+      row("c_share", "Share with practice", h("span", { class: "v" }, "✓ Yes, BAA in place")),
+      row("c_fu", "72-hour check-in", h("span", { class: "v" }, S.consents.followup ? "✓ Opted in" : "Declined"))
+    ] : row("c_wait", "Status", h("span", { class: "v wait" }, "Waiting for patient")));
+
+  const sections = S.disposition === "in_person"
+    ? [dispo, screener, h("div", { class: "sec full" }, h("h3", {}, "Patient details"), h("div", { class: "neg" }, "None collected. Checkpoint stops before asking for identity when a red flag appears, so no personal data leaves the patient's chat."))]
+    : [dispo, screener, patient, history, billing, consents];
+  let review = null;
+  if (S.disposition !== "in_person") {
+    const p = planLines();
+    review = h("div", { class: "sec full draftwrap", "data-k": "draft" + !!S.submittedAt + (S.draftStatus || "") },
+      h("h3", {}, "AI draft reply, edit before you approve"),
+      S.submittedAt ? [
+        h("textarea", { id: "draft", readonly: true, "aria-label": "Draft reply to patient" }, viewAI ? maskDraft(S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft) : (S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft)),
+        h("div", { class: "plan" }, h("b", {}, "Assessment. "), p.dx, h("br"), h("b", {}, "Plan per protocol. "), p.rx, ". ", p.alt, ".", h("br"), p.fu, h("br"),
+          h("span", { class: "sim" }, (S.draftStatus === "drafting" ? "Claude is drafting from the masked case. Protocol template shown meanwhile. " : S.draftStatus === "claude" ? "Drafted by Claude from the masked case; Checkpoint filled in name and pharmacy. " : "Drafted from protocol " + DATA.protocol.id + ". ") + "The prescription is simulated in this demo."))
+      ] : h("div", { class: "neg" }, "The draft appears once the patient sends the case. Until then you can watch the screener and details arrive."));
+  }
+  const caseEl = h("div", { class: "case" }, top, h("div", { class: "grid" }, sections, review));
+  if (S.disposition !== "in_person") caseEl.append(h("div", { class: "actions", id: "actions" }));
+  if (S.signed) caseEl.append(h("div", { class: "signed" },
+    S.signed.video ? "Video visit started " + fmtTime(S.signed.at) + "." :
+    S.signed.refer ? "Referred to in-person care " + fmtTime(S.signed.at) + ". Patient not charged." :
+    `Signed by ${c.name}, ${c.cred} at ${fmtTime(S.signed.at)}${S.signed.edited ? ", after editing the AI draft" : ""}. e-Prescription sent (simulated).`));
+
+  root.replaceChildren(queue, caseEl, logBox(),
+    h("div", { class: "foot" }, "All patients, clinicians, licenses, pharmacies and insurers here are synthetic."));
+  if (S.disposition !== "in_person") renderActions();
+
+  // highlight anything new
+  const now = new Set();
+  root.querySelectorAll("[data-k]").forEach(el => {
+    const k = el.dataset.k; now.add(k);
+    if (seen.size && !seen.has(k) && !/false$|^q_[a-z]+$|c_wait/.test(k)) el.classList.add("flash");
+  });
+  seen = now;
+}
+function renderActions() {
+  const box = $("#actions"); if (!box) return;
+  const ready = S.phase === "submitted" && !viewAI;
+  const ta = $("#draft");
+  const editing = ta && !ta.readOnly;
+  box.replaceChildren(
+    S.visitType === "video" && !S.videoStarted ? h("button", { class: "approve", disabled: !ready, onclick: Doctor.video }, "Start video visit") : null,
+    h("button", { class: S.visitType === "video" && !S.videoStarted ? "" : "approve", disabled: !ready, onclick: Doctor.approve }, "Approve and send"),
+    h("button", { disabled: !ready, onclick: Doctor.edit }, editing ? "Done editing" : "Edit draft"),
+    S.visitType !== "video" ? h("button", { disabled: !ready || !!S.videoStarted, onclick: Doctor.video }, S.videoStarted ? "Video started" : "Switch to video") : null,
+    h("button", { disabled: !ready, onclick: Doctor.refer }, "Refer in person"));
+}
+function statusText() {
+  return { idle: "Starting", screening: "Screening in progress", result: "Screener done", clinicians: "Choosing a clinician",
+    intake: "Collecting details", consent: "Reviewing consent", submitted: "Ready for your review", answered: "Signed", in_person: "No case, sent to ER or urgent care" }[S.phase];
+}
+function statusPill() {
+  const cls = S.phase === "submitted" ? "pill g" : S.phase === "in_person" ? "pill r" : S.phase === "answered" ? "pill g" : "pill";
+  return h("span", { class: cls }, statusText());
+}
+function waitText() { const s = Math.floor((Date.now() - S.submittedAt) * CLOCK_SPEED / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function logBox() {
+  return h("div", { class: "log" }, h("h3", {}, "Audit log"),
+    S.events.length ? h("ol", {}, S.events.slice().reverse().map(e => h("li", {}, h("time", {}, fmtTime(e.at)), h("span", {}, e.text))))
+      : h("div", { class: "neg" }, "Every decision Checkpoint makes is logged here."));
+}
+setInterval(() => { if (S && S.submittedAt && !S.answeredAt) { const el = document.querySelector(".case-top .right div:last-child"); if (el) el.textContent = "Waiting " + waitText(); } }, 1000);
+
+/* =========================================================
+   WINDOWS: patient's Claude chat and the clinician's console
+   ========================================================= */
+let win = "patient";
+function setWin(w) {
+  win = w;
+  document.body.classList.remove("v-patient", "v-split", "v-clinician");
+  document.body.classList.add("v-" + w);
+  [["vPatient", "patient"], ["vClin", "clinician"]].forEach(([id, v]) => {
+    const b = $("#" + id); b.setAttribute("aria-pressed", v === w); if (v === w) b.classList.remove("ping");
+  });
+  hideToast();
+  if (w !== "patient") { seen = new Set(); renderConsole(); }
+  if (w !== "clinician") scrollDown();
+}
+function hideToast() { const t = $("#toast"); if (t) t.remove(); }
+function toast(title, sub, label, go) {
+  hideToast();
+  document.body.append(h("div", { class: "toast", id: "toast", role: "status" },
+    h("div", {}, title, h("small", {}, sub)),
+    h("button", { onclick: go }, label),
+    h("button", { class: "x", "aria-label": "Dismiss", onclick: hideToast }, "✕")));
+}
+function caseSent() {
+  if (win === "split") return;
+  $("#vClin").classList.add("ping");
+  toast("New case " + S.caseId + " for " + Engine.clinician().short, "The handoff is complete. See what the clinician receives.", "Open clinician window", () => setWin("clinician"));
+}
+function replySent() {
+  if (win === "split") return;
+  $("#vPatient").classList.add("ping");
+  toast("Reply sent to Maria's chat", "Signed by " + Engine.clinician().name + ".", "Back to Claude", () => setWin("patient"));
+}
+
+/* =========================================================
+   AUTOPLAY: drives the same buttons a presenter would click
+   ========================================================= */
+let playing = false;
+// Human pacing: reads before acting, types at about 7 to 9 characters a second, hesitates before clicks.
+const HUMAN = {
+  key: ch => 70 + Math.random() * 90 + (ch === " " ? 60 : 0) + (/[,.?]/.test(ch) ? 180 : 0),
+  read: text => Math.min(6500, 1400 + text.length * 32),
+  think: () => 1100 + Math.random() * 1200,
+  hover: () => 450 + Math.random() * 350
+};
+async function waitIdle() { while (busy) await sleep(150); await sleep(500); }
+function lastWidget() { const ws = thread.querySelectorAll(".w:not(.done):not(.info)"); return ws[ws.length - 1]; }
+async function typeInto(input, text) {
+  input.focus(); input.value = "";
+  for (const ch of text) { input.value += ch; input.dispatchEvent(new Event("input")); await sleep(HUMAN.key(ch)); }
+}
+async function press(el) {
+  if (!el) return;
+  el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  el.classList.add("hov"); await sleep(HUMAN.hover()); el.classList.remove("hov");
+  el.click();
+}
+async function readLatest() {
+  const msgs = thread.querySelectorAll(".msg.ai");
+  const last = msgs[msgs.length - 1];
+  await sleep(HUMAN.read(last ? last.textContent : ""));
+}
+function answerFor(w) {
+  const labels = [...w.querySelectorAll(".askopt")].map(o => o.dataset.label);
+  if (S.phase === "screening") return S.sc.answers[Engine.question().id] || [labels[0]];
+  const yes = labels.find(l => /^yes/i.test(l));
+  return [yes || labels[0]];
+}
+async function autoplay(scenarioId = "video", opts = {}) {
+  if (playing) return;
+  setWin("patient");
+  reset(scenarioId, !opts.live); // the Play demo button is always scripted; tests can drive the live API
+  playing = true; $("#play").setAttribute("aria-pressed", "true"); $("#play").textContent = "Playing…";
+  setPaused(false); $("#pausebtn").disabled = false;
+  const token = runToken, alive = () => token === runToken;
+  const sc = S.sc, input = $("#input");
+  let injected = false;
+  try {
+    await sleep(1200);
+    await typeInto(input, sc.opener); await sleep(700); if (!alive()) return;
+    $("#composer").requestSubmit();
+    for (let step = 0; step < 90 && alive(); step++) {
+      await waitIdle(); if (!alive()) return;
+      if (["submitted", "answered", "in_person"].includes(S.phase)) break;
+      await readLatest(); if (!alive()) return;
+      if (sc.injection && !injected && S.phase === "screening") {
+        injected = true;
+        await typeInto(input, sc.injection); await sleep(800); if (!alive()) return;
+        $("#composer").requestSubmit(); continue;
+      }
+      const w = lastWidget();
+      if (!w) { if (!busy) await sleep(800); continue; }
+      if (w.matches("[data-ask]")) {
+        const vals = answerFor(w);
+        for (const v of vals) { const o = w.querySelector(`.askopt[data-label="${CSS.escape(v)}"]`); await sleep(HUMAN.think() / (vals.length > 1 ? 2 : 1)); await press(o); }
+        const go = w.querySelector(".askfoot .go"); if (go && !go.disabled) { await sleep(600); await press(go); }
+      } else if (w.querySelector(".clin")) {
+        await sleep(HUMAN.think() + 800);
+        await press(w.querySelector(`.clin[data-id="${sc.clinician}"]`));
+      } else if (w.dataset.visit) {
+        await sleep(HUMAN.think());
+        if (sc.visit === "video") {
+          await press(w.querySelector('.vopt[data-visit="video"]')); await sleep(1800);
+          await press(w.querySelector(`[data-slot="${CSS.escape(sc.slot)}"]`)); await sleep(1200);
+          await press(w.querySelector(".slots .confirm"));
+        } else await press(w.querySelector('.vopt[data-visit="text"]'));
+      } else if (w.dataset.field) {
+        const v = sc.intake[w.dataset.field];
+        await sleep(700);
+        const inp = w.querySelector("input");
+        // Intake values appear at once (like autofill) instead of being typed letter by letter, to keep the demo short.
+        if (inp) { inp.value = v; inp.dispatchEvent(new Event("input")); await sleep(500); await press(w.querySelector(".send")); }
+        else await press(w.querySelector(`.chip[data-label="${CSS.escape(v)}"]`));
+      } else if (w.querySelector(".consent")) {
+        await sleep(1500);
+        for (const k of ["tele", "ai", "share", "followup"]) { await press(w.querySelector(`[data-k="${k}"]`)); await sleep(500 + Math.random() * 400); }
+        await sleep(900); await press(w.querySelector(".pay .go"));
+      } else await sleep(600);
+    }
+    if (!alive() || S.phase !== "submitted") return;
+    // The clinician's side
+    await waitIdle(); await sleep(3500); if (!alive()) return;
+    setWin("clinician"); await sleep(4500); if (!alive()) return;
+    if (S.visitType === "video") {
+      await press($("#actions .approve")); await sleep(2500); if (!alive()) return;   // Start video visit
+      setWin("patient"); await sleep(2000);
+      await press(apptEl && apptEl.joinBtn); await sleep(6000); if (!alive()) return;  // in the call
+      await press(document.querySelector(".call .end")); await sleep(2500);
+      setWin("clinician"); await sleep(3000); if (!alive()) return;
+    }
+    await press($("#actions .approve")); await sleep(2500); if (!alive()) return;   // Approve and send
+    setWin("patient");
+  } finally {
+    if (token === runToken) { playing = false; $("#play").setAttribute("aria-pressed", "false"); $("#play").textContent = "Play demo"; setPaused(false); $("#pausebtn").disabled = true; }
+  }
+}
+
+/* =========================================================
+   WIRING
+   ========================================================= */
+const params = new URLSearchParams(location.search);
+mode = params.get("mode") === "scripted" ? "scripted" : "live";
+let liveAvailable = null, apiModel = null;
+function prettyModel(m) { const x = m.replace(/^claude-/, "").split("-"); return x[0][0].toUpperCase() + x[0].slice(1) + (x.length > 1 ? " " + x.slice(1).join(".") : ""); }
+function modelLabel() {
+  const el = $(".crow .model");
+  el.classList.toggle("off", mode === "live" && liveAvailable === false);
+  el.textContent = mode === "scripted" ? "Scripted walkthrough" : liveAvailable ? prettyModel(apiModel) : liveAvailable === false ? "API not connected" : "Connecting…";
+}
+function reset(scenarioId, scripted = false) {
+  runToken++; busy = false; playing = false;
+  mode = scripted ? "scripted" : "live";
+  document.querySelectorAll(".call").forEach(c => c.remove()); apptEl = null;
+  $("#play").setAttribute("aria-pressed", "false"); $("#play").textContent = "Play demo";
+  setPaused(false); $("#pausebtn").disabled = true;
+  S = freshState(DATA.scenarios[scenarioId] ? scenarioId : DATA.scenarios[params.get("scenario")] ? params.get("scenario") : "maria");
+  Live.messages = []; Live.pending = null;
+  seen = new Set();
+  const empty = h("div", { class: "empty" }, h("strong", {}, "Good evening, Maria"), h("span", {}, "How can I help you tonight?"));
+  if (!scripted && liveAvailable === false) empty.append(h("div", { class: "offline" },
+    h("b", {}, "Claude API not connected. "), "Put your key in .env as ANTHROPIC_API_KEY and restart node server.js. Play demo still works, it's scripted."));
+  thread.replaceChildren(empty);
+  $("#ctitle").textContent = "New chat";
+  hideToast(); ["vPatient", "vClin"].forEach(id => $("#" + id).classList.remove("ping"));
+  if (win === "clinician") setWin("patient");
+  modelLabel();
+  renderConsole();
+}
+$("#input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#composer").requestSubmit(); } });
+$("#input").addEventListener("input", e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; });
+$("#newchat").onclick = () => reset();
+$("#composer").addEventListener("submit", e => {
+  e.preventDefault(); const t = $("#input").value.trim(); if (!t) return;
+  if (mode === "live" && !liveAvailable) { modelLabel(); return; }
+  $("#input").value = ""; $("#input").style.height = "auto";
+  const empty = thread.querySelector(".empty"); if (empty) empty.remove();
+  if (S.phase === "idle" && !INJECTION.test(t)) Actions.opener(t); else Actions.free(t);
+});
+$("#vPatient").onclick = () => setWin("patient");
+$("#vClin").onclick = () => setWin("clinician");
+$("#viewClin").onclick = () => { viewAI = false; $("#viewClin").setAttribute("aria-pressed", "true"); $("#viewAI").setAttribute("aria-pressed", "false"); seen = new Set(); renderConsole(); };
+$("#viewAI").onclick = () => { viewAI = true; $("#viewAI").setAttribute("aria-pressed", "true"); $("#viewClin").setAttribute("aria-pressed", "false"); seen = new Set(); renderConsole(); };
+document.addEventListener("keydown", e => {
+  if (/^Digit[1-6]$/.test(e.code) && !e.altKey && !e.metaKey && !e.ctrlKey && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && win === "patient") {
+    const w = lastWidget(); const o = w && w.matches("[data-ask]") && w.querySelectorAll(".askopt")[+e.code.slice(5) - 1]; if (o) o.click();
+  }
+});
+$("#play").onclick = () => { if (playing) { reset(); return; } autoplay("video"); };
+$("#pausebtn").onclick = () => { if (playing) setPaused(!paused); };
+$("#resetbtn").onclick = $("#topreset").onclick = () => { setWin("patient"); reset(); };
+
+reset();
+(async function checkLive() {
+  try {
+    const r = await fetch("/api/health", { cache: "no-store" });
+    const j = await r.json();
+    liveAvailable = !!j.live; apiModel = j.model;
+  } catch (e) { liveAvailable = false; }
+  if (S.phase === "idle" && !S.complaint) reset(); else modelLabel();
+})();
+</script>
+</body>
+</html>
