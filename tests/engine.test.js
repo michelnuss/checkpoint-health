@@ -153,6 +153,8 @@ test("after choosing a clinician, the patient picks text now or a video time", r
   assert.strictEqual(run(`Engine.chooseVisit("video", "Next week").type`), "error", "only offered times");
   assert.strictEqual(run(`Engine.chooseVisit("video", "Tonight 10:30 PM").type`), "visit_chosen");
   assert.strictEqual(run("Engine.price()"), 79, "video price");
+  assert.strictEqual(run("Engine.serviceFee()"), 3.95, "Checkpoint's 5% service fee, paid by the patient");
+  assert.strictEqual(run("Engine.total()"), 82.95, "the clinician keeps the full $79");
   assert.strictEqual(run("Engine.intakeNext().type"), "field");
 });
 

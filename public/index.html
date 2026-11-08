@@ -618,7 +618,7 @@ function h(tag, attrs, ...kids) {
   return el;
 }
 // Play demo pace: every pause in the scripted run is multiplied by this (1 = human speed, lower = faster).
-const DEMO_PACE = 0.55;
+const DEMO_PACE = Number(new URLSearchParams(location.search).get("pace")) || 0.2; // Play demo runs in about 30 s; ?pace= overrides
 // While the Play demo is paused, every scripted pause waits until it resumes.
 let paused = false;
 const sleep = ms => new Promise(r => setTimeout(r, mode === "scripted" ? ms * DEMO_PACE : ms))
@@ -787,7 +787,7 @@ function clinicianWidget(step) {
     if (!c.online) return h("div", { class: "clin off" }, inner);
     return h("button", { class: "clin" + (S.sc.clinician === c.id ? " demo-pick" : ""), "data-id": c.id,
       onclick: e => { e.currentTarget.classList.add("picked"); w.classList.add("done"); Actions.choose(c.id); } }, inner);
-  }), h("div", { class: "cardfoot" }, "Licensed in Florida. Cheapest first. Price is the full visit fee, set before you start."));
+  }), h("div", { class: "cardfoot" }, "Licensed in Florida. Cheapest first. Price is the clinician's fee; Checkpoint adds a 5% service fee at checkout."));
   w.append(card);
   return w;
 }
@@ -862,8 +862,8 @@ function visitWidget(step) {
       confirm);
   }
   card.append(h("div", { class: "cardfoot" }, step.video_reason === "needed" ? "Your answers need a video visit rather than text."
-    : step.video_reason === "patient_asked" ? "Video, as you asked. With a clinician licensed in Florida. Price is the full fee."
-    : "All options are with a clinician licensed in Florida. Price is the full fee."));
+    : step.video_reason === "patient_asked" ? "Video, as you asked. With a clinician licensed in Florida. Price is the clinician's fee, plus a 5% Checkpoint service fee."
+    : "All options are with a clinician licensed in Florida. Price is the clinician's fee, plus a 5% Checkpoint service fee."));
   w.append(card);
   return w;
 }
@@ -949,7 +949,7 @@ function consentWidget() {
     h("h4", {}, "Review and send"),
     h("div", { class: "sum" }, (Engine.isVideo() ? "Video visit " + (S.slot ? S.slot.replace(/^Tonight/, "tonight").replace(/^Tomorrow/, "tomorrow") + " " : "") : "Text visit ") + "with " + c.name + ", " + c.cred + ". " + Object.keys(S.intake).length + " details captured securely."),
     items.map(([k, label, req]) => h("label", {}, boxes[k] = h("input", { type: "checkbox", "data-k": k, onchange: update }), h("span", {}, label))),
-    h("div", { class: "pay" }, h("span", {}, h("b", {}, "$" + Engine.price()), " on test card ending 4242. Charged only if the clinician takes your case."), sendBtn))));
+    h("div", { class: "pay" }, h("span", {}, h("b", {}, usd(Engine.total())), " on test card ending 4242: " + usd(Engine.price()) + " to " + c.short + " + " + usd(Engine.serviceFee()) + " Checkpoint service fee (5%). Charged only if the clinician takes your case."), sendBtn))));
   return w;
 }
 
@@ -1286,15 +1286,15 @@ const DASH = {
   demand: [3, 4, 6, 5, 7, 9, 12, 14, 11, 8], // visit requests per hour, all Florida clinicians on Checkpoint
   nowIndex: 7,                               // 9 PM bucket (the demo clock starts at 9:40 PM)
   weekDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-  week: [140, 160, 120, 200, 180, 90, 0],    // your flat fees per day; today filled from tonight's visits
+  week: [350, 450, 300, 529, 450, 229, 0],   // your fees per day (you keep 100%); today filled from tonight's visits
   past: [ // tonight's earlier visits
-    { id: "CP-1039", who: "R. S.", what: "Sinus symptoms", visit: "Online", status: "Signed", reply: 9, fee: 20, check: "Pending" },
-    { id: "CP-1037", who: "L. M.", what: "Painful urination", visit: "Online", status: "Signed", reply: 12, fee: 20, check: "Better" },
-    { id: "CP-1036", who: "A. P.", what: "Painful urination", visit: "Video", status: "Signed", reply: 6, fee: 30, check: "Better" },
+    { id: "CP-1039", who: "R. S.", what: "Sinus symptoms", visit: "Online", status: "Signed", reply: 9, fee: 50, check: "Pending" },
+    { id: "CP-1037", who: "L. M.", what: "Painful urination", visit: "Online", status: "Signed", reply: 12, fee: 50, check: "Better" },
+    { id: "CP-1036", who: "A. P.", what: "Painful urination", visit: "Video", status: "Signed", reply: 6, fee: 79, check: "Better" },
     { id: "CP-1034", who: "K. D.", what: "Painful urination", visit: "Online", status: "Referred in person", reply: 15, fee: 0, check: "n/a" },
-    { id: "CP-1033", who: "J. R.", what: "Pink eye", visit: "Online", status: "Signed", reply: 18, fee: 20, check: "Better" },
-    { id: "CP-1031", who: "T. W.", what: "Painful urination", visit: "Video", status: "Signed", reply: 11, fee: 30, check: "Pending" },
-    { id: "CP-1030", who: "N. G.", what: "Painful urination", visit: "Online", status: "Signed", reply: 14, fee: 20, check: "Better" }
+    { id: "CP-1033", who: "J. R.", what: "Pink eye", visit: "Online", status: "Signed", reply: 18, fee: 50, check: "Better" },
+    { id: "CP-1031", who: "T. W.", what: "Painful urination", visit: "Video", status: "Signed", reply: 11, fee: 79, check: "Pending" },
+    { id: "CP-1030", who: "N. G.", what: "Painful urination", visit: "Online", status: "Signed", reply: 14, fee: 50, check: "Better" }
   ],
   routedInPerson: 3 // red flags Checkpoint sent to in-person care before any case reached you
 };
@@ -1305,7 +1305,7 @@ function dashRows() {
     rows.unshift({ id: S.caseId, who: n, what: "Painful urination", visit: S.visitType === "video" ? "Video" : S.visitType ? "Online" : "Pending",
       status: S.signed ? (S.signed.refer ? "Referred in person" : "Signed") : S.phase === "submitted" ? "Waiting for you" : "Patient answering",
       reply: S.answeredAt ? Math.max(1, Math.round((S.answeredAt - S.submittedAt) * CLOCK_SPEED / 60000)) : null,
-      fee: S.signed && !S.signed.refer ? (S.visitType === "video" ? 30 : 20) : null, check: S.signed ? "Pending" : "", live: true });
+      fee: S.signed && !S.signed.refer ? Engine.price() : null, check: S.signed ? "Pending" : "", live: true });
   }
   return rows;
 }
@@ -1346,8 +1346,8 @@ function renderDashboard() {
   const tiles = h("div", { class: "tiles" },
     tile("Waiting now", String(waiting), waiting ? "Reply due in under 30 min" : "Inbox clear", waiting ? "act" : ""),
     tile("Visits tonight", String(done.length), online + " online · " + video + " video"),
-    tile("Your earnings tonight", "$" + fees, "Flat fee per visit, paid weekly"),
-    tile("Average visit price", "$" + Math.round(avgPrice), "What patients paid, cash"),
+    tile("Your earnings tonight", "$" + fees, "You keep 100% of your fee"),
+    tile("Average visit price", "$" + Math.round(avgPrice), "Your fee; patient adds 5% to Checkpoint"),
     tile("Median reply", median(replies) + " min", "Target: 30 min"),
     tile("Sent in person by rules", String(DASH.routedInPerson), "Red flags, no case created", "safe"));
 
@@ -1368,7 +1368,7 @@ function renderDashboard() {
     barChart({ labels: DASH.demandHours, values: DASH.demand, highlight: DASH.nowIndex, unit: "requests", title: "Visit requests per hour from 2 PM to 11 PM; peak 14 at 9 PM" }),
     h("p", { class: "note" }, "Peak is 9 PM. Staying online until midnight covers about 30% of tonight's requests."));
 
-  const earn = h("div", { class: "card" }, h("h3", {}, "Your fees this week ", h("span", { class: "src" }, "flat fee per visit")),
+  const earn = h("div", { class: "card" }, h("h3", {}, "Your fees this week ", h("span", { class: "src" }, "you keep 100%")),
     barChart({ labels: DASH.weekDays, values: week, highlight: 6, unit: "", title: "Fees per day this week", fmt: v => "$" + v, height: 130 }),
     h("div", { class: "kv" }, h("span", {}, "Week to date"), h("b", {}, "$" + week.reduce((a, b) => a + b, 0))));
 
@@ -1377,7 +1377,7 @@ function renderDashboard() {
     h("div", { class: "mixbar", role: "img", "aria-label": `Online ${online}, video ${video}` },
       h("span", { class: "on", style: `flex:${online || 0.0001}`, title: "Online: " + online }), h("span", { class: "vid", style: `flex:${video || 0.0001}`, title: "Video: " + video })),
     h("div", { class: "legend" }, h("span", {}, h("i", { class: "on" }), "Online " + online + " (" + pOn + "%) · $" + me.price), h("span", {}, h("i", { class: "vid" }), "Video " + video + " (" + (100 - pOn) + "%) · $" + me.video)),
-    h("div", { class: "kv" }, h("span", {}, "You're paid"), h("b", {}, "$20 online, $30 video. Never a percentage.")));
+    h("div", { class: "kv" }, h("span", {}, "You keep"), h("b", {}, "100% of your fee. Checkpoint's 5% is paid by the patient, never by you.")));
 
   const table = h("div", { class: "card wide" }, h("h3", {}, "Patients tonight ", h("span", { class: "src" }, "initials only on this screen")),
     h("table", { class: "ptab" },
@@ -1516,7 +1516,7 @@ function renderConsole() {
     row("address" + !!a.address, "Location now", val("address", a.address && a.address.value, "[ADDRESS]"), a.address ? { src: "patient", at: a.address.at } : {}),
     row("phone" + !!a.phone, "Mobile", val("phone", a.phone && a.phone.value, "[PHONE]"), a.phone ? { src: "patient", at: a.phone.at } : {}),
     row("c" + !!S.consents, "Consents", val("c", S.consents ? "Telehealth, AI disclosure, share with practice" + (S.consents.followup ? ", 72-hour check-in" : "") + ". Signed " + fmtTime(S.consents.at) : null)),
-    row("card" + !!S.consents, "Payment", val("card", S.consents ? "$" + Engine.price() + " held on test card 4242. You're paid $" + (S.visitType === "video" ? 30 : 20) + " flat." : null)));
+    row("card" + !!S.consents, "Payment", val("card", S.consents ? usd(Engine.total()) + " held on test card 4242. You keep your full " + usd(Engine.price()) + "; the patient paid Checkpoint's 5% service fee (" + usd(Engine.serviceFee()) + ")." : null)));
 
   // ---- Decision panel: order, message, sign
   let decide;
@@ -1689,17 +1689,17 @@ async function typeInto(input, text) {
   input.focus(); input.value = "";
   for (const ch of text) { input.value += ch; input.dispatchEvent(new Event("input")); await sleep(HUMAN.key(ch)); }
 }
-async function press(el) {
+async function press(el, f = 1) {
   if (!el) return;
   // The demo never scrolls the page for you: it only brings a chat element into view if you're following the chat.
   if (followChat && thread.contains(el)) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  el.classList.add("hov"); await sleep(HUMAN.hover()); el.classList.remove("hov");
+  el.classList.add("hov"); await sleep(HUMAN.hover() * f); el.classList.remove("hov");
   el.click();
 }
-async function readLatest() {
+async function readLatest(f = 1) {
   const msgs = thread.querySelectorAll(".msg.ai");
   const last = msgs[msgs.length - 1];
-  await sleep(HUMAN.read(last ? last.textContent : ""));
+  await sleep(HUMAN.read(last ? last.textContent : "") * f);
 }
 function answerFor(w) {
   const labels = [...w.querySelectorAll(".askopt")].map(o => o.dataset.label);
@@ -1725,7 +1725,7 @@ async function autoplay(scenarioId = "video", opts = {}) {
     for (let step = 0; step < 90 && alive(); step++) {
       await waitIdle(); if (!alive()) return;
       if (["submitted", "answered", "in_person"].includes(S.phase)) break;
-      await readLatest(); if (!alive()) return;
+      await readLatest(S.phase === "intake" ? 0.15 : 1); if (!alive()) return;   // secure-details questions are short: barely pause on them
       if (sc.injection && !injected && S.phase === "screening") {
         injected = true;
         await typeInto(input, sc.injection); await sleep(800); if (!alive()) return;
@@ -1749,11 +1749,11 @@ async function autoplay(scenarioId = "video", opts = {}) {
         } else await press(w.querySelector('.vopt[data-visit="text"]'));
       } else if (w.dataset.field) {
         const v = sc.intake[w.dataset.field];
-        await sleep(700);
+        await sleep(150);
         const inp = w.querySelector("input");
         // Intake values appear at once (like autofill) instead of being typed letter by letter, to keep the demo short.
-        if (inp) { inp.value = v; inp.dispatchEvent(new Event("input")); await sleep(500); await press(w.querySelector(".send")); }
-        else await press(w.querySelector(`.chip[data-label="${CSS.escape(v)}"]`));
+        if (inp) { inp.value = v; inp.dispatchEvent(new Event("input")); await sleep(150); await press(w.querySelector(".send"), 0.3); }
+        else await press(w.querySelector(`.chip[data-label="${CSS.escape(v)}"]`), 0.3);
       } else if (w.querySelector(".consent")) {
         await sleep(1500);
         // Tick only boxes that are still empty: never undo a box the presenter already ticked.
@@ -1868,13 +1868,23 @@ reset();
 // ?shot=console  the clinician console with a submitted case   ?shot=dashboard  the clinician dashboard
 {
   const shot = params.get("shot");
-  if (shot === "console" || shot === "dashboard") {
+  if (shot === "chat") {
+    document.querySelector(".viewswitch").style.display = "none";
+    reset("maria", true); S.complaint = DATA.scenarios.maria.opener; thread.replaceChildren(); userSay(S.complaint);
+    const m = h("div", { class: "msg ai" },
+      h("p", {}, "I'm sorry you're dealing with that. Burning when peeing is often caused by:"),
+      h("ul", {}, h("li", {}, h("b", {}, "A bladder infection (UTI)"), ", the most common cause, especially in women"), h("li", {}, h("b", {}, "A vaginal infection"), ", like yeast or bacterial vaginosis"),
+        h("li", {}, h("b", {}, "A sexually transmitted infection")), h("li", {}, h("b", {}, "Irritation"), " from soaps, products, or sex")),
+      h("p", {}, "I can't diagnose you, but through Checkpoint I can connect you with a licensed clinician in Florida tonight, after a few quick safety questions."));
+    addEl(m); addEl(widgetFor(Engine.screenNext())); $(".crow .model").textContent = "Haiku 5.5";
+  }
+  if (shot === "console" || shot === "dashboard" || shot === "claudesaw") {
     reset("maria", true); S.complaint = DATA.scenarios.maria.opener;
     Engine.screenNext(); for (const a of ["Female", "18 to 64", "None of these", "Less than 2 days", "None", "None of these"]) Engine.screenNext(a);
     Engine.listClinicians(); Engine.selectClinician("clin_marquez"); Engine.intakeNext(); Engine.chooseVisit("text");
     for (const [k, v] of Object.entries(DATA.scenarios.maria.intake)) Engine.recordIntake(k, v);
     Engine.intakeNext(); Engine.submit({ tele: true, ai: true, share: true, followup: true }); S.draftStatus = "template";
-    setWin("clinician"); if (shot === "dashboard") setClinTab("dash"); else renderConsole(); hideToast();
+    setWin("clinician"); if (shot === "dashboard") setClinTab("dash"); else if (shot === "claudesaw") $("#viewAI").click(); else renderConsole(); hideToast();
     document.querySelector(".viewswitch").style.display = "none";
   }
 }

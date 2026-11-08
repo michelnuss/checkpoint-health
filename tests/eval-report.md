@@ -1,5 +1,5 @@
 # Checkpoint held-out evaluation
-Run 2026-11-08 04:11 UTC. 44 screening cases (17 red flag, 13 video, 14 text) and 14 draft cases, 58 in all. Synthetic, labeled by hand from the protocol, never used to tune the rules.
+Run 2026-11-08 15:32 UTC. 44 screening cases (17 red flag, 13 video, 14 text) and 14 draft cases, 58 in all. Synthetic, labeled by hand from the protocol, never used to tune the rules.
 Baseline: keyword triage of the patient's first message (what a symptom checker sees without asking questions).
 
 ## Slide 6 table (rules, offline)

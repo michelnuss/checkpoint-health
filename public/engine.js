@@ -6,6 +6,9 @@
    clinician, license, pharmacy or insurer.
    ========================================================= */
 const DATA = {
+  // Clinicians set their own price and keep all of it. The patient pays Checkpoint a separate 5% service fee on top.
+  // Providers never pay Checkpoint (Fla. Stat. 817.505, 458.331): the fee comes from the patient, shown before paying.
+  pricing: { serviceFeeRate: 0.05 },
   protocol: { id: "UTI-v1", name: "Uncomplicated cystitis, women 18 to 64", version: "rules v1.0",
     likely: "a bladder infection (UTI)" }, // what Claude may say it sounds like; only a clinician confirms it
   questions: [
@@ -291,7 +294,7 @@ const Engine = {
     if (f) return { type: "field", field_id: f.id, label: f.label, ask: f.ask, note: "The app collects this in a secure field. You will only see that it was provided." };
     S.phase = "consent";
     const c = this.clinician();
-    return { type: "consent", clinician: c.name, visit: S.visitType, slot: S.slot, price_usd: this.price(), note: "The app shows a consent and payment card. Ask the patient to review and send." };
+    return { type: "consent", clinician: c.name, visit: S.visitType, slot: S.slot, price_usd: this.price(), checkpoint_service_fee_usd: this.serviceFee(), total_usd: this.total(), note: "The app shows a consent and payment card. Ask the patient to review and send." };
   },
   chooseVisit(type, slot) {
     if (S.phase !== "intake") return { type: "error", message: "Choose a clinician first." };
@@ -312,12 +315,14 @@ const Engine = {
   },
   clinician() { return DATA.clinicians.find(c => c.id === S.clinicianId); },
   isVideo() { return S.visitType === "video" || (!S.visitType && S.disposition === "video"); },
-  price() { const c = this.clinician(); return c ? (this.isVideo() ? c.video : c.price) : null; },
+  price() { const c = this.clinician(); return c ? (this.isVideo() ? c.video : c.price) : null; },     // the clinician's fee, all theirs
+  serviceFee() { const p = this.price(); return p == null ? null : Math.round(p * DATA.pricing.serviceFeeRate * 100) / 100; }, // Checkpoint, paid by the patient
+  total() { const p = this.price(); return p == null ? null : Math.round((p + this.serviceFee()) * 100) / 100; },
   submit(consents) {
     S.consents = { ...consents, at: Date.now() };
     S.phase = "submitted"; S.submittedAt = Date.now();
     S.draft = draftReply();
-    log("Consents signed, $" + this.price() + " held on test card");
+    log("Consents signed, " + usd(this.total()) + " held on test card (" + usd(this.price()) + " clinician fee + " + usd(this.serviceFee()) + " Checkpoint 5% service fee)");
     log("Case " + S.caseId + " sent to " + this.clinician().name + (S.visitType === "video" ? ", video visit " + S.slot : ""));
   }
 };
@@ -334,6 +339,7 @@ function normalizeDob(raw) {
   if (dt.getMonth() !== +mo - 1 || dt.getDate() !== +d || +y < 1900 || dt > new Date()) return null;
   return String(mo).padStart(2, "0") + "/" + String(d).padStart(2, "0") + "/" + y;
 }
+function usd(n) { return n == null ? "" : "$" + (Number.isInteger(n) ? n : n.toFixed(2)); }
 function age(dob) {
   const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(normalizeDob(dob) || ""); if (!m) return null;
   const b = new Date(+m[3], +m[1] - 1, +m[2]); const n = new Date();
