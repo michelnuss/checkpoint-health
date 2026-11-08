@@ -468,7 +468,18 @@ function setPaused(p) {
 }
 const thread = $("#thread");
 const threadWrap = $("#threadwrap");
-function scrollDown() { threadWrap.scrollTop = threadWrap.scrollHeight; }
+// Auto-scroll only while the reader is at the bottom of the chat. Scrolling up to read pauses it;
+// scrolling back to the bottom turns it back on (like any chat app).
+let followChat = true;
+const atChatBottom = () => threadWrap.scrollHeight - threadWrap.scrollTop - threadWrap.clientHeight < 80;
+// Only your own scrolling (wheel, touch, keys, scrollbar drag) stops the follow; the app's own scrolling never does.
+let userScrolling = false;
+["wheel", "touchmove", "pointerdown"].forEach(ev => threadWrap.addEventListener(ev, () => { userScrolling = true; }, { passive: true }));
+["pointerup", "touchend"].forEach(ev => window.addEventListener(ev, () => { userScrolling = false; followChat = atChatBottom(); }, { passive: true }));
+threadWrap.addEventListener("keydown", e => { if (["PageUp", "ArrowUp", "Home"].includes(e.key)) followChat = false; });
+threadWrap.addEventListener("scroll", () => { if (atChatBottom()) followChat = true; else if (userScrolling) followChat = false; });
+threadWrap.addEventListener("wheel", e => { if (e.deltaY < 0) followChat = false; else setTimeout(() => { if (atChatBottom()) followChat = true; }, 120); }, { passive: true });
+function scrollDown(force) { if (force || followChat) threadWrap.scrollTop = threadWrap.scrollHeight; }
 function addEl(el) { thread.append(el); scrollDown(); return el; }
 function initials(name) { return name.replace(/^Dr\. /, "").split(/[\s-]+/).map(p => p[0]).slice(0, 2).join(""); }
 
@@ -667,7 +678,7 @@ function visitWidget(step) {
     h("span", { class: "price" }, "$" + text.price_usd)));
   const vbtn = h("button", { class: "vopt", "data-visit": "video", onclick: () => {
       vbtn.setAttribute("aria-pressed", "true");
-      if (!slotBox) { slotBox = slots(); vbtn.after(slotBox); slotBox.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+      if (!slotBox) { slotBox = slots(); vbtn.after(slotBox); if (followChat) slotBox.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
     } },
     h("span", { class: "vi", html: ICON_VIDEO }),
     h("span", {}, h("b", {}, "Video visit, pick a time"), h("small", {}, "Face to face on your phone, about 10 minutes")),
@@ -1355,7 +1366,8 @@ async function typeInto(input, text) {
 }
 async function press(el) {
   if (!el) return;
-  el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  // The demo never scrolls the page for you: it only brings a chat element into view if you're following the chat.
+  if (followChat && thread.contains(el)) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
   el.classList.add("hov"); await sleep(HUMAN.hover()); el.classList.remove("hov");
   el.click();
 }
@@ -1424,16 +1436,17 @@ async function autoplay(scenarioId = "video", opts = {}) {
     if (!alive() || S.phase !== "submitted") return;
     // The clinician's side
     await waitIdle(); await sleep(3500); if (!alive()) return;
-    setWin("clinician"); await sleep(4500); if (!alive()) return;
+    // From here the presenter chooses which window to watch; the demo never switches windows for them.
+    await sleep(4500); if (!alive()) return;
     if (S.visitType === "video") {
-      await press($("#actions .approve")); await sleep(2500); if (!alive()) return;   // Start video visit
-      setWin("patient"); await sleep(2000);
-      await press(apptEl && apptEl.joinBtn); await sleep(6000); if (!alive()) return;  // in the call
-      await press(document.querySelector(".call .end")); await sleep(2500);
-      setWin("clinician"); await sleep(3000); if (!alive()) return;
+      await press($("#actions .approve")); await sleep(1500); if (!alive()) return;   // clinician starts the video visit
+      // The patient joins only when the presenter clicks "Join on Zoom", and the call lasts until they end it.
+      while (alive() && !document.querySelector(".call")) await sleep(300);
+      while (alive() && document.querySelector(".call")) await sleep(300);
+      if (!alive()) return;
+      await sleep(2500); if (!alive()) return;
     }
     await press($("#actions .approve")); await sleep(2500); if (!alive()) return;   // Approve and send
-    setWin("patient");
   } finally {
     if (token === runToken) { playing = false; $("#play").setAttribute("aria-pressed", "false"); $("#play").textContent = "Play demo"; setPaused(false); $("#pausebtn").disabled = true; }
   }
@@ -1458,7 +1471,7 @@ function reset(scenarioId, scripted = false) {
   $("#play").setAttribute("aria-pressed", "false"); $("#play").textContent = "Play demo";
   setPaused(false); $("#pausebtn").disabled = true;
   S = freshState(DATA.scenarios[scenarioId] ? scenarioId : DATA.scenarios[params.get("scenario")] ? params.get("scenario") : "maria");
-  Live.messages = []; Live.pending = null;
+  Live.messages = []; Live.pending = null; followChat = true;
   seen = new Set();
   const empty = h("div", { class: "empty" }, h("strong", {}, "Good evening, Maria"), h("span", {}, "How can I help you tonight?"));
   if (!scripted && liveAvailable === false) empty.append(h("div", { class: "offline" },
@@ -1474,6 +1487,7 @@ $("#input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shift
 $("#input").addEventListener("input", e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; });
 $("#newchat").onclick = () => reset();
 $("#composer").addEventListener("submit", e => {
+  if (!playing) followChat = true; // you sent a message yourself: follow the reply
   e.preventDefault(); const t = $("#input").value.trim(); if (!t) return;
   if (mode === "live" && !liveAvailable) { modelLabel(); return; }
   $("#input").value = ""; $("#input").style.height = "auto";
