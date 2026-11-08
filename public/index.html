@@ -305,6 +305,8 @@ details.fold[open] summary h3{margin-bottom:8px}
 .decide .signed{border-radius:10px;border:1px solid #BFD9CB}
 .card.stop{border-color:#EDC4BC;background:#FFF8F6}
 .card.stop p{margin:0 0 6px;font-size:14px;line-height:1.5}
+.card.stop p.hard{color:var(--red);font-weight:600}
+.card.stop:has(.hard){border-color:var(--red)}
 .cx .log{margin-top:0}
 @media (max-width:1180px){.cx{grid-template-columns:1fr}.cx-queue{position:static;flex-direction:row;overflow-x:auto}.qi{min-width:180px}.cx-queue .qh{display:none}}
 @media (max-width:1020px){.cx-cols{grid-template-columns:1fr}.decide{position:static}.crits{grid-template-columns:1fr}.pbanner{grid-template-columns:1fr;position:static}.pbanner .clock{justify-items:start;text-align:left}}
@@ -507,7 +509,7 @@ async function aiSay(text, { tool, result, input } = {}) {
   const think = addEl(thinkingEl());
   await sleep(mode === "scripted" ? 500 : 0);
   if (token !== runToken) return;
-  if (tool && !HIDDEN_TOOLS.has(tool)) { think.before(toolBlock(tool, input, result)); }
+  if (tool && SHOW_TOOL_CHIPS) { think.before(toolBlock(tool, input, result)); }
   await sleep(mode === "scripted" ? 250 : 0);
   if (token !== runToken) return;
   if (!text) { think.remove(); return; }
@@ -520,9 +522,10 @@ function toolBlock(name, input, result) {
       h("span", { class: "chev", html: '<svg width="14" height="14" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>' })),
     h("div", { class: "io" }, h("h5", {}, "Request"), h("pre", {}, JSON.stringify(input || {}, null, 2)), h("h5", {}, "Response"), h("pre", {}, JSON.stringify(result, null, 2))));
 }
-// Screener calls happen on every question, so their chips are hidden; the question cards already show Checkpoint at work.
-const HIDDEN_TOOLS = new Set(["screen_next"]);
-function toolChip(name, input, result) { if (!HIDDEN_TOOLS.has(name)) addEl(toolBlock(name, input, result)); }
+// The "Checkpoint <tool>" chips are hidden in the chat; the cards already show Checkpoint at work,
+// and the clinician console's audit log records every call. Set to true to show them again.
+const SHOW_TOOL_CHIPS = false;
+function toolChip(name, input, result) { if (SHOW_TOOL_CHIPS) addEl(toolBlock(name, input, result)); }
 function userSay(text) { addEl(h("div", { class: "msg user" }, text)); }
 function userSecure(label) {
   addEl(h("div", { class: "msg user secure" },
@@ -619,7 +622,11 @@ function clinicianWidget(step) {
 function fieldWidget(f) {
   const w = h("div", { class: "w", "data-field": f.id });
   const demo = (S.sc.intake || {})[f.id];
-  const send = val => { if (busy || !String(val).trim()) return; w.classList.add("done"); Actions.field(f.id, String(val).trim()); };
+  const send = val => {
+    if (busy || !String(val).trim()) return;
+    if (f.id === "dob" && age(String(val).trim()) == null) { toast("Check the date", "Use MM/DD/YYYY, for example 05/02/1992.", "OK", hideToast); return; }
+    w.classList.add("done"); Actions.field(f.id, String(val).trim());
+  };
   let control;
   if (f.type === "single") {
     control = h("div", { class: "chips" }, f.options.map(o => h("button", { class: "chip" + (o === demo ? " demo" : ""), "data-label": o, onclick: () => send(o) }, o)));
@@ -956,7 +963,7 @@ function liveAskCard(input) {
 /* Claude drafts the clinician's reply from the masked case (server: prompts/clinician-draft.md) */
 async function requestDraft() {
   S.draftStatus = "template";
-  if (mode !== "live") return;
+  if (mode !== "live" || S.disposition !== "async") return;
   S.draftStatus = "drafting"; renderConsole();
   const c = Engine.clinician(), p = planLines(), token = runToken;
   const payload = {
@@ -992,14 +999,15 @@ const Doctor = {
     S.signed = { at: Date.now(), text, edited };
     S.phase = "answered"; S.answeredAt = Date.now();
     log((edited ? "Clinician edited the AI draft, then " : "Clinician ") + "approved and signed");
-    log("e-Prescription sent to pharmacy (simulated)");
+    const rx = S.disposition === "async"; // outside the protocol, no protocol prescription goes out
+    if (rx) log("e-Prescription sent to pharmacy (simulated)");
     const c = Engine.clinician();
     const mins = Math.max(1, Math.round((S.answeredAt - S.submittedAt) * CLOCK_SPEED / 60000));
     sysNote(`${c.name} answered in ${mins} minute${mins > 1 ? "s" : ""}`);
     addEl(h("div", { class: "drmsg" },
       h("div", { class: "from" }, h("div", { class: "avatar" }, initials(c.name)), h("div", {}, h("b", {}, c.name + ", " + c.cred), h("span", {}, "Licensed in Florida, via Checkpoint"))),
       h("p", {}, text),
-      h("div", { class: "rx" }, "Prescription sent to " + ((S.intake.pharmacy || {}).value || "your pharmacy").split(",")[0] + " (simulated for this demo)")));
+      rx ? h("div", { class: "rx" }, "Prescription sent to " + ((S.intake.pharmacy || {}).value || "your pharmacy").split(",")[0] + " (simulated for this demo)") : null));
     renderConsole();
     replySent();
   },
@@ -1128,7 +1136,8 @@ function renderConsole() {
           a.dob && !viewAI ? "DOB " + a.dob.value : null, S.caseId].filter(Boolean).join("  ·  ")))),
     h("div", { class: "chips" },
       allergy ? chip(nka ? "g" : "r", viewAI ? "[ALLERGIES]" : nka ? "NKDA" : "Allergy: " + allergy, "al" + allergy) : chip("", "Allergies pending", "al0"),
-      red ? chip(pregnant ? "r" : "g", pregnant ? "Possibly pregnant" : "Denies pregnancy", "preg" + pregnant) : chip("", "Pregnancy pending", "preg0"),
+      sex === "Male" ? null : red ? chip(pregnant ? "r" : "g", pregnant ? "Possibly pregnant" : "Denies pregnancy", "preg" + pregnant) : chip("", "Pregnancy pending", "preg0"),
+      a.dob && ag == null ? chip("r", "DOB unreadable", "dobx") : null,
       where == null ? chip("", "Location pending", "loc0") : chip(where ? "g" : "r", where ? "In Florida ✓" : "Outside Florida", "loc" + where),
       S.visitType ? chip("b", S.visitType === "video" ? "Video" + (S.videoNow ? ", now" : ", " + S.slot.replace(/^Tonight /, "")) : "Online visit (async)", "vt" + S.visitType) : null),
     h("div", { class: "clock" }, statusPill(),
@@ -1137,7 +1146,7 @@ function renderConsole() {
   // ---- One-line summary, written by the rules (not AI)
   const durationTxt = ans("duration") ? ans("duration")[0].toLowerCase() : null;
   const negs = [];
-  ["red", "other"].forEach(id => { const q = DATA.questions.find(x => x.id === id), v = ans(id); if (v) q.options.forEach(o => { if (!o.none && !v.includes(o.label)) negs.push(o.neg); }); });
+  ["red", "other"].forEach(id => { const q = DATA.questions.find(x => x.id === id), v = ans(id); if (v) q.options.forEach(o => { if (!o.none && !v.includes(o.label) && !(sex === "Male" && o.neg === "pregnancy")) negs.push(o.neg); }); });
   const who = (ag != null && !viewAI ? ag + "-year-old " : "") + (sex === "Male" ? "man" : sex === "Female" ? "woman" : "patient");
   const summaryTxt = `${who.charAt(0).toUpperCase() + who.slice(1)} with burning on urination${durationTxt ? " for " + durationTxt : ""}.` +
     (S.red.length ? ` Reports ${S.red.join(", ").toLowerCase()}.` : negs.length ? ` Denies ${negs.slice(0, 5).join(", ")}.` : "") +
@@ -1163,13 +1172,13 @@ function renderConsole() {
       crit("No fever or chills", has("red", "Fever of 100.4°F or chills"), "fev"),
       crit("No flank or back pain", has("red", "Pain in your back or side"), "fl"),
       crit("No vomiting", has("red", "Vomiting"), "vo"),
-      crit("Not pregnant", has("red", "Could be pregnant"), "pr"),
+      sex === "Male" ? crit("Not pregnant (not applicable)", "wait", "pr") : crit("Not pregnant", has("red", "Could be pregnant"), "pr"),
       crit("No visible blood", has("red", "Blood in your urine"), "bl"),
       crit("Symptoms 7 days or less", ans("duration") ? (ans("duration")[0] === "More than 7 days" ? "warn" : "ok") : "wait", "du"),
       crit("Fewer than 3 UTIs a year", ans("recurrent") ? (ans("recurrent")[0] === "3 or more" ? "warn" : "ok") : "wait", "re"),
       crit("No complicating factors", ans("other") ? (ans("other").some(v => v !== "None of these") ? "warn" : "ok") : "wait", "ot"),
       crit("In Florida now (license state)", where == null ? "wait" : where ? "ok" : "bad", "fl_loc"),
-      crit("Birth date matches age answer", ag == null ? "wait" : (ag >= 18 && ag <= 64) === (ans("age") && ans("age")[0] === "18 to 64") ? "ok" : "warn", "id")));
+      crit(a.dob && ag == null ? "Birth date unreadable" : "Birth date matches age answer", a.dob && ag == null ? "warn" : ag == null ? "wait" : (ag >= 18 && ag <= 64) === (ans("age") && ans("age")[0] === "18 to 64") ? "ok" : "warn", "id")));
 
   // ---- Screener answers, compact
   const screener = h("details", { class: "card fold" }, h("summary", {}, h("h3", {}, "Screener answers ", h("span", { class: "src" }, DATA.protocol.version))),
@@ -1197,7 +1206,14 @@ function renderConsole() {
       h("p", { class: "neg" }, "Reason: " + S.red.join(", ") + ".")));
   } else {
     const p = planLines(), nitro = p.drug === "nitrofurantoin";
-    const order = h("div", { class: "card rxcard", "data-k": "rx" + p.drug + !!pharmacy },
+    const blockers = treatBlockers();
+    const stops = blockers.length ? h("div", { class: "card stop", "data-k": "blk" + blockers.map(b => b.id).join("") },
+      h("h3", {}, blockers.some(b => b.hard) ? "Can't treat yet" : "Before you sign"),
+      blockers.map(b => h("p", { class: b.hard ? "hard" : "" }, (b.hard ? "✗ " : "! ") + b.text))) : null;
+    const order = S.disposition === "video" ? h("div", { class: "card rxcard", "data-k": "rxnone" },
+      h("h3", {}, "Order ", h("span", { class: "src" }, "not pre-filled")),
+      h("div", { class: "neg" }, "This patient is outside " + DATA.protocol.id + " (" + S.caution.join(", ").toLowerCase().replace(/outside protocol: /g, "") + "). Checkpoint doesn't suggest a medicine; you choose one, if any, after the video visit."))
+    : h("div", { class: "card rxcard", "data-k": "rx" + p.drug + !!pharmacy },
       h("h3", {}, "Order ", h("span", { class: "src" }, "protocol default, you can change it")),
       h("div", { class: "dx" }, h("span", { class: "k" }, "Dx "), p.dx),
       h("div", { class: "rxline" }, h("b", {}, nitro ? "Nitrofurantoin mono/macro 100 mg capsule" : "Fosfomycin 3 g oral granules"),
@@ -1214,11 +1230,11 @@ function renderConsole() {
         h("textarea", { id: "draft", readonly: true, "aria-label": "Draft reply to patient" }, viewAI ? maskDraft(S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft) : (S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft)),
         h("div", { class: "neg" }, S.draftStatus === "drafting" ? "Claude is drafting from the masked case. Template shown meanwhile." : "Claude never saw the patient's name or details; Checkpoint filled them in. You sign, Claude doesn't.")
       ] : h("div", { class: "neg" }, "The draft appears when the patient sends the case."));
-    decide = h("aside", { class: "decide" }, order, msg, h("div", { class: "actions", id: "actions" }),
+    decide = h("aside", { class: "decide" }, stops, order, msg, h("div", { class: "actions", id: "actions" }),
       S.signed ? h("div", { class: "signed" },
         S.signed.video ? "Video visit started " + fmtTime(S.signed.at) + "." :
         S.signed.refer ? "Referred to in-person care " + fmtTime(S.signed.at) + ". Patient not charged." :
-        `Signed by ${c.name}, ${c.cred} at ${fmtTime(S.signed.at)}${S.signed.edited ? ", after editing the AI draft" : ""}. e-Prescription sent (simulated).`) : null);
+        `Signed by ${c.name}, ${c.cred} at ${fmtTime(S.signed.at)}${S.signed.edited ? ", after editing the AI draft" : ""}.${S.disposition === "async" ? " e-Prescription sent (simulated)." : ""}`) : null);
   }
 
   const mainCol = S.disposition === "in_person"
@@ -1258,12 +1274,15 @@ function clockText() {
 function renderActions() {
   const box = $("#actions"); if (!box) return;
   const ready = S.phase === "submitted" && !viewAI;
+  const blocked = treatBlockers().some(b => b.hard);
+  const needsVideoFirst = S.disposition === "video" && !S.videoStarted;
+  const canSign = ready && !blocked && !needsVideoFirst;
   const ta = $("#draft");
   const editing = ta && !ta.readOnly;
   box.replaceChildren(...[
-    S.visitType === "video" && !S.videoStarted ? h("button", { class: "approve", disabled: !ready, onclick: Doctor.video }, "Start video visit") : null,
-    h("button", { class: S.visitType === "video" && !S.videoStarted ? "" : "approve", disabled: !ready, onclick: Doctor.approve }, "Approve, sign and send Rx"),
-    h("button", { disabled: !ready, onclick: Doctor.edit }, editing ? "Done editing" : "Edit draft"),
+    S.visitType === "video" && !S.videoStarted ? h("button", { class: "approve", disabled: !ready || blocked, onclick: Doctor.video }, "Start video visit") : null,
+    h("button", { class: S.visitType === "video" && !S.videoStarted ? "" : "approve", disabled: !canSign, title: blocked ? "Patient is outside Florida" : needsVideoFirst ? "Start the video visit first" : null, onclick: Doctor.approve }, S.disposition === "video" ? "Sign note and send message" : "Approve, sign and send Rx"),
+    h("button", { disabled: !ready || blocked, onclick: Doctor.edit }, editing ? "Done editing" : "Edit draft"),
     S.visitType !== "video" ? h("button", { disabled: !ready || !!S.videoStarted, onclick: Doctor.video }, S.videoStarted ? "Video started" : "Switch to video") : null,
     h("button", { disabled: !ready, onclick: Doctor.refer }, "Refer in person")].filter(Boolean));
 }
@@ -1430,7 +1449,7 @@ function prettyModel(m) { const x = m.replace(/^claude-/, "").split("-"); return
 function modelLabel() {
   const el = $(".crow .model");
   el.classList.toggle("off", mode === "live" && liveAvailable === false);
-  el.textContent = mode === "scripted" ? "Scripted walkthrough" : liveAvailable ? prettyModel(apiModel) : liveAvailable === false ? "API not connected" : "Connecting…";
+  el.textContent = mode === "scripted" ? "" : liveAvailable ? prettyModel(apiModel) : liveAvailable === false ? "API not connected" : "Connecting…";
 }
 function reset(scenarioId, scripted = false) {
   runToken++; busy = false; playing = false;

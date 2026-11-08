@@ -221,8 +221,18 @@ test("protocol medicine respects a nitrofurantoin allergy", run => {
 test("age and Florida checks", run => {
   assert.strictEqual(run(`inFlorida("2140 SW 8th St, Miami, FL 33135")`), true);
   assert.strictEqual(run(`inFlorida("10 Main St, Atlanta, GA")`), false);
+  assert.strictEqual(run(`inFlorida("18911 Collins Ave")`), true, "no other state named: counts as Florida");
+  assert.strictEqual(run(`inFlorida("500 5th Ave, New York, NY 10036")`), false);
+  assert.strictEqual(run(`inFlorida("1 Main St 30301")`), false, "Atlanta ZIP");
+  assert.strictEqual(run(`inFlorida("1 Main St 33139")`), true, "Miami Beach ZIP");
+  assert.strictEqual(run(`inFlorida("1200 Washington Ave")`), true, "a street named after a state is not another state");
+  assert.strictEqual(run(`inFlorida("12 Oak St, Austin, Texas")`), false);
   assert.ok(run(`age("05/02/1992")`) >= 34);
   assert.strictEqual(run(`age("not a date")`), null);
+  for (const typed of ["12232004", "12/23/2004", "12-23-2004", "2004-12-23", "12.23.2004"])
+    assert.strictEqual(run(`normalizeDob(${JSON.stringify(typed)})`), "12/23/2004", typed);
+  assert.strictEqual(run(`normalizeDob("13232004")`), null, "no month 13");
+  assert.strictEqual(run(`normalizeDob("02302004")`), null, "no Feb 30");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

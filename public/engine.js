@@ -305,6 +305,7 @@ const Engine = {
     return { type: "visit_chosen", visit: type, now, slot: S.slot, price_usd: this.price() };
   },
   recordIntake(id, value) {
+    if (id === "dob" && normalizeDob(value)) value = normalizeDob(value); // store one format: MM/DD/YYYY
     S.intake[id] = { value, at: Date.now() };
     const f = DATA.intake.find(x => x.id === id);
     log(f.label + " captured by Checkpoint (not sent to Claude)");
@@ -320,15 +321,51 @@ const Engine = {
     log("Case " + S.caseId + " sent to " + this.clinician().name + (S.visitType === "video" ? ", video visit " + S.slot : ""));
   }
 };
+// Reads common ways people type a birth date and returns it as MM/DD/YYYY, or null if it isn't a real date:
+// 05/02/1992, 5-2-1992, 5.2.1992, 05021992, 1992-05-02.
+function normalizeDob(raw) {
+  const t = String(raw || "").trim();
+  let m, mo, d, y;
+  if ((m = /^(\d{1,2})[\/.\-\s](\d{1,2})[\/.\-\s](\d{4})$/.exec(t))) [mo, d, y] = [m[1], m[2], m[3]];
+  else if ((m = /^(\d{2})(\d{2})(\d{4})$/.exec(t))) [mo, d, y] = [m[1], m[2], m[3]];
+  else if ((m = /^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/.exec(t))) [y, mo, d] = [m[1], m[2], m[3]];
+  else return null;
+  const dt = new Date(+y, +mo - 1, +d);
+  if (dt.getMonth() !== +mo - 1 || dt.getDate() !== +d || +y < 1900 || dt > new Date()) return null;
+  return String(mo).padStart(2, "0") + "/" + String(d).padStart(2, "0") + "/" + y;
+}
 function age(dob) {
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dob || ""); if (!m) return null;
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(normalizeDob(dob) || ""); if (!m) return null;
   const b = new Date(+m[3], +m[1] - 1, +m[2]); const n = new Date();
   let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a;
 }
-function inFlorida(addr) { return /\b(FL|Florida)\b/i.test(addr || ""); }
+// Location check. The intake question already tells the patient care is only while they're in Florida, so an
+// address is treated as Florida unless it names another state or has a ZIP code outside Florida (320xx to 349xx).
+// A real launch would also confirm with the device's location.
+const OTHER_STATES = /,\s*(AL|AK|AZ|AR|CA|CO|CT|DE|DC|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b|,\s*(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming|puerto rico)\b/;
+function inFlorida(addr) {
+  const t = String(addr || "");
+  if (/\b(FL|Florida)\b/i.test(t)) return true;
+  const zip = /\b(\d{5})(?:-\d{4})?\s*$/.exec(t.trim());
+  if (zip) return +zip[1] >= 32000 && +zip[1] <= 34999;
+  return !(OTHER_STATES.test(t) || OTHER_STATES.test(t.toLowerCase())); // state after a comma: "Atlanta, GA", "Austin, Texas"
+}
 function firstName() { const n = S.intake.name && S.intake.name.value; return n ? n.split(" ")[0] : "there"; }
+// Reasons the protocol order can't be pre-filled or signed as is. Fixed rules; the clinician decides what to do.
+function treatBlockers() {
+  const b = [];
+  const addr = (S.intake.address || {}).value, dob = (S.intake.dob || {}).value;
+  if (addr && !inFlorida(addr)) b.push({ hard: true, id: "location", text: "Patient reports being outside Florida. A Florida license only covers patients physically in Florida, so you can't treat or prescribe. Confirm location or refer." });
+  if (dob && age(dob) == null) b.push({ hard: false, id: "dob", text: "Birth date can't be read (" + dob + "). Confirm identity and age before treating." });
+  if (S.disposition === "video") b.push({ hard: false, id: "video", text: "Outside the online-visit protocol (" + S.caution.join(", ").toLowerCase().replace(/outside protocol: /g, "") + "). No order is pre-filled; decide treatment during the video visit." });
+  return b;
+}
 function draftReply() {
   const c = Engine.clinician(), allergy = (S.intake.allergies || {}).value || "";
+  if (S.disposition === "video") {
+    const when = S.slot ? (S.videoNow ? "in a few minutes" : S.slot.replace(/^Tonight/, "tonight").replace(/^Tomorrow/, "tomorrow")) : "soon";
+    return `Hi ${firstName()}, I'm ${c.name}. Thanks for your answers. I'd like to see you on video before deciding on treatment, so I'll meet you on Zoom ${when}. If you get a fever, pain in your back or side, or vomiting before then, go to urgent care.`;
+  }
   const pharm = ((S.intake.pharmacy || {}).value || "your pharmacy").split(",")[0];
   const rx = planLines().patientRx;
   return `Hi ${firstName()}, I'm ${c.name}. Your symptoms fit an uncomplicated bladder infection. I'm sending ${rx} to ${pharm}. Drink plenty of water. If you get a fever, pain in your back or side, or vomiting, or you're not better in 48 hours, go to urgent care. I'll check in with you in 72 hours.`;
