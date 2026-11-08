@@ -100,7 +100,7 @@ details.tool pre{margin:0 0 10px;background:#FAF9F5;border:1px solid var(--chat-
 .chip:hover{background:#F5F4EE;border-color:#CFCCBF}
 .chip[aria-pressed="true"]{background:#141413;border-color:#141413;color:#fff}
 .chip.demo{position:relative}
-.chip.demo::after{content:"";position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:#7FB89C}
+/* demo-answer hint dot removed: the audience shouldn't see which option the script will pick */
 .w .hint{font-size:12.5px;color:var(--chat-muted);margin-top:8px}
 .w .go{margin-top:10px;background:#141413;color:#fff;border:0;border-radius:10px;padding:8px 16px;font-size:14px}
 .w .go:disabled{opacity:.3;cursor:not-allowed}
@@ -171,7 +171,7 @@ button.clin:hover{background:#FAF9F5}
 .askopt .n{width:22px;height:22px;border-radius:6px;border:1px solid #DEDCD1;display:grid;place-items:center;font-size:12px;color:var(--chat-muted);flex:none;font-variant-numeric:tabular-nums}
 .askopt[aria-pressed="true"]{background:#F0EEE6}
 .askopt[aria-pressed="true"] .n{background:#141413;color:#fff;border-color:#141413}
-.askopt.demo::after{content:"";position:absolute;right:14px;top:50%;margin-top:-3.5px;width:7px;height:7px;border-radius:50%;background:#7FB89C}
+/* demo-answer hint dot removed: the audience shouldn't see which option the script will pick */
 .askother{display:flex;gap:8px;border-top:1px solid var(--chat-line);padding:7px 8px 7px 16px;align-items:center}
 .askother input{flex:1;border:0;outline:none;font:inherit;font-size:14.5px;background:transparent;color:var(--chat-ink)}
 .askother input::placeholder{color:#8C8B85}
@@ -269,10 +269,10 @@ body.v-clinician .c-body{padding:16px 24px 28px;max-width:1480px;margin:0 auto;w
 .pbanner .demo{color:var(--c-muted);font-size:12.5px;margin-top:2px;font-family:var(--mono)}
 .pbanner .chips{display:flex;flex-wrap:wrap;gap:6px}
 .pbanner .clock{text-align:right;font-size:12px;color:var(--c-muted);display:grid;gap:4px;justify-items:end}
-.chip{font-size:12px;font-weight:500;padding:3px 9px;border-radius:6px;background:var(--c-soft);border:1px solid var(--c-line);color:var(--c-muted);white-space:nowrap}
-.chip.g{background:var(--green-soft);color:var(--green-ink);border-color:#BFD9CB}
-.chip.r{background:var(--red-soft);color:var(--red);border-color:#EDC4BC;font-weight:600}
-.chip.b{background:#EAF0F7;color:#24466B;border-color:#C9D7E8}
+.console .chip{font-size:12px;font-weight:500;padding:3px 9px;border-radius:6px;background:var(--c-soft);border:1px solid var(--c-line);color:var(--c-muted);white-space:nowrap}
+.console .chip.g{background:var(--green-soft);color:var(--green-ink);border-color:#BFD9CB}
+.console .chip.r{background:var(--red-soft);color:var(--red);border-color:#EDC4BC;font-weight:600}
+.console .chip.b{background:#EAF0F7;color:#24466B;border-color:#C9D7E8}
 .cx-cols{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:12px;align-items:start}
 .cx-chart{display:grid;gap:12px;min-width:0}
 .card{background:var(--c-panel);border:1px solid var(--c-line);border-radius:10px;padding:13px 16px}
@@ -397,9 +397,9 @@ table.scr td:last-child{text-align:right}
 .src-mark.rules{color:var(--green);border-color:#BFD9CB}
 .src-mark.clinician{color:#24466B;border-color:#C9D7E8}
 /* quiet chips: grey unless it is a hazard */
-.chip{background:transparent;border-color:var(--c-line);color:var(--c-ink);font-weight:500}
-.chip.wait{color:#9AA6AC;border-style:dashed}
-.chip.r{background:var(--red-soft);color:var(--red);border-color:#EDC4BC}
+.console .chip{background:transparent;border-color:var(--c-line);color:var(--c-ink);font-weight:500}
+.console .chip.wait{color:#9AA6AC;border-style:dashed}
+.console .chip.r{background:var(--red-soft);color:var(--red);border-color:#EDC4BC}
 .ringrow{display:inline-flex;gap:7px;align-items:center;font-family:var(--mono);font-size:11.5px}
 .verdict{font-size:12.5px;padding:3px 9px;border-radius:5px;display:inline-flex;gap:6px;align-items:center}
 .verdict::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
@@ -528,7 +528,7 @@ body:not(.night) .console{background:var(--c-bg)}
 .tile .v{font-family:var(--serif);font-weight:600}
 .pbanner .avatar{background:#EAF0F7;color:#24466B;font-family:var(--serif);font-size:15px}
 body:not(.night) .rxline{background-color:#FFFDF8}
-body:not(.night) .chip{background:var(--c-panel)}
+body:not(.night) .console .chip{background:var(--c-panel)}
 body:not(.night) .tgl .sw{background:#DAD5CA}
 body:not(.night) .tgl input:checked + .sw{background:var(--green)}
 .chart .bar path{opacity:.5}
@@ -764,7 +764,7 @@ function questionWidget(step) {
 function connectWidget() {
   const options = S.disposition === "video" ? ["Yes, video visit", "Not now"] : ["Text visit", "Video visit", "Not now"];
   return askCard({ question: S.disposition === "video" ? "Want me to set up a video visit with a licensed clinician?" : "Would you like a text visit with a clinician, or a video visit?", options }, {
-    demo: [options[0]], onAnswer: vals => Actions.connect(!/not now/i.test(vals[0]), /video/i.test(vals[0]))
+    demo: [S.sc.visit === "video" ? "Video visit" : options[0]], onAnswer: vals => Actions.connect(!/not now/i.test(vals[0]), /video/i.test(vals[0]))
   });
 }
 function inPersonWidget() {
@@ -1123,7 +1123,7 @@ function liveAskCard(input) {
   } else if (S.phase === "result" && S.disposition !== "in_person") {
     // The connect question: Checkpoint owns the options, so video is always offered.
     opts = S.disposition === "video" ? ["Yes, video visit", "Not now"] : ["Text visit", "Video visit", "Not now"]; multi = false;
-    demo = [opts[0]];
+    demo = [S.sc.visit === "video" && opts.includes("Video visit") ? "Video visit" : opts[0]];
   } else if (opts.some(o => /^yes/i.test(o))) demo = opts.filter(o => /^yes/i.test(o)).slice(0, 1);
   if (opts.length < 2) opts = ["Yes", "No"];
   return askCard({ question: String(input.question || "Which fits best?"), options: opts, multi_select: multi }, {
@@ -1704,8 +1704,10 @@ async function readLatest() {
 function answerFor(w) {
   const labels = [...w.querySelectorAll(".askopt")].map(o => o.dataset.label);
   if (S.phase === "screening") return S.sc.answers[Engine.question().id] || [labels[0]];
+  // The connect question: a video scenario asks for video right away, so the whole flow stays video.
+  const video = S.sc.visit === "video" && labels.find(l => /video/i.test(l));
   const yes = labels.find(l => /^yes/i.test(l));
-  return [yes || labels[0]];
+  return [video || yes || labels[0]];
 }
 async function autoplay(scenarioId = "video", opts = {}) {
   if (playing) return;
@@ -1754,7 +1756,9 @@ async function autoplay(scenarioId = "video", opts = {}) {
         else await press(w.querySelector(`.chip[data-label="${CSS.escape(v)}"]`));
       } else if (w.querySelector(".consent")) {
         await sleep(1500);
-        for (const k of ["tele", "ai", "share", "followup"]) { await press(w.querySelector(`[data-k="${k}"]`)); await sleep(500 + Math.random() * 400); }
+        // Tick only boxes that are still empty: never undo a box the presenter already ticked.
+        for (const k of ["tele", "ai", "share", "followup"]) { const box = w.querySelector(`[data-k="${k}"]`); if (box && !box.checked) { await press(box); await sleep(500 + Math.random() * 400); } }
+        if (w.classList.contains("done")) continue; // presenter already sent it
         await sleep(900); await press(w.querySelector(".pay .go"));
       } else await sleep(600);
     }
@@ -1859,6 +1863,21 @@ reset();
   } catch (e) { liveAvailable = false; }
   if (S.phase === "idle" && !S.complaint) reset(); else modelLabel();
 })();
+
+// Screenshot presets for the pitch deck (synthetic Maria case, scripted mode, no API calls):
+// ?shot=console  the clinician console with a submitted case   ?shot=dashboard  the clinician dashboard
+{
+  const shot = params.get("shot");
+  if (shot === "console" || shot === "dashboard") {
+    reset("maria", true); S.complaint = DATA.scenarios.maria.opener;
+    Engine.screenNext(); for (const a of ["Female", "18 to 64", "None of these", "Less than 2 days", "None", "None of these"]) Engine.screenNext(a);
+    Engine.listClinicians(); Engine.selectClinician("clin_marquez"); Engine.intakeNext(); Engine.chooseVisit("text");
+    for (const [k, v] of Object.entries(DATA.scenarios.maria.intake)) Engine.recordIntake(k, v);
+    Engine.intakeNext(); Engine.submit({ tele: true, ai: true, share: true, followup: true }); S.draftStatus = "template";
+    setWin("clinician"); if (shot === "dashboard") setClinTab("dash"); else renderConsole(); hideToast();
+    document.querySelector(".viewswitch").style.display = "none";
+  }
+}
 </script>
 </body>
 </html>
