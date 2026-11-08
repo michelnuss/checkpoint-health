@@ -294,7 +294,7 @@ body.v-clinician .c-body{padding:16px 24px 28px;max-width:1480px;margin:0 auto;w
 details.fold summary{cursor:pointer;list-style:none}
 details.fold summary h3{margin:0}
 details.fold[open] summary h3{margin-bottom:8px}
-.decide{position:sticky;top:76px;display:grid;gap:12px}
+.decide{position:sticky;top:76px;display:grid;gap:12px;max-height:calc(100vh - 150px);overflow-y:auto;overscroll-behavior:contain;padding-bottom:4px}
 .rxcard .dx{font-size:13px;margin-bottom:8px}
 .rxline{border:1px solid var(--c-line);border-radius:8px;padding:9px 11px;background:#FBFCFC;font-size:13.5px;line-height:1.5}
 .rxline b{display:block;font-size:14px}
@@ -312,6 +312,7 @@ details.fold[open] summary h3{margin-bottom:8px}
 @media (max-width:1020px){.cx-cols{grid-template-columns:1fr}.decide{position:static}.crits{grid-template-columns:1fr}.pbanner{grid-template-columns:1fr;position:static}.pbanner .clock{justify-items:start;text-align:left}}
 
 /* ---------- CONSOLE ---------- */
+
 .console{font-family:var(--c-font);color:var(--c-ink);display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden}
 .c-head{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--c-panel);border-bottom:1px solid var(--c-line);gap:12px;flex-wrap:wrap}
 .c-head .t{font-weight:600;font-size:15px}
@@ -378,6 +379,147 @@ table.scr td:last-child{text-align:right;width:84px}
 .c-empty{background:var(--c-panel);border:1px dashed var(--c-line);border-radius:10px;padding:48px 28px;text-align:center;color:var(--c-muted);line-height:1.6}
 .c-empty b{display:block;color:var(--c-ink);font-size:17px;font-weight:500;margin-bottom:4px}
 .foot{font-size:11.5px;color:var(--c-muted);margin-top:12px}
+/* ---------- CONSOLE POLISH: restraint, ledger, provenance, signing ---------- */
+.console{font-variant-numeric:tabular-nums}
+.card{border-radius:8px;box-shadow:none;padding:12px 14px}
+.card h3{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--c-muted);align-items:center}
+.card h3 .src{text-transform:none;letter-spacing:0;font-size:11.5px}
+.cx-queue .qh{font-size:10.5px;letter-spacing:.08em}
+.row{font-size:13.5px;grid-template-columns:120px 1fr auto;align-items:baseline}
+.row .k{font-size:12.5px}
+.rmeta,table.scr td.rmeta{display:inline-flex;gap:6px;align-items:center;justify-content:flex-end;white-space:nowrap}
+.rmeta time{font-family:var(--mono);font-size:11px;color:var(--c-muted);opacity:.75}
+table.scr td.rmeta{width:118px}
+table.scr td:last-child{text-align:right}
+.dim{color:#9AA6AC}
+.src-mark{display:inline-grid;place-items:center;min-width:17px;height:15px;padding:0 3px;border-radius:3px;font:600 9.5px/1 var(--mono);letter-spacing:.02em;border:1px solid var(--c-line);color:var(--c-muted);background:var(--c-panel);cursor:help}
+.src-mark.ai{color:var(--accent-ink);border-color:#E9C6B7}
+.src-mark.rules{color:var(--green);border-color:#BFD9CB}
+.src-mark.clinician{color:#24466B;border-color:#C9D7E8}
+/* quiet chips: grey unless it is a hazard */
+.chip{background:transparent;border-color:var(--c-line);color:var(--c-ink);font-weight:500}
+.chip.wait{color:#9AA6AC;border-style:dashed}
+.chip.r{background:var(--red-soft);color:var(--red);border-color:#EDC4BC}
+.ringrow{display:inline-flex;gap:7px;align-items:center;font-family:var(--mono);font-size:11.5px}
+.verdict{font-size:12.5px;padding:3px 9px;border-radius:5px;display:inline-flex;gap:6px;align-items:center}
+.verdict::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+/* black-bar redaction in "What Claude saw" */
+.masked{background:#111;color:#fff;border-radius:2px;padding:1px 7px;font-size:11px;letter-spacing:.02em;animation:redact .45s cubic-bezier(.2,.7,.2,1) both}
+@keyframes redact{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+/* prescription pad */
+.rxline{position:relative;overflow:hidden;padding:12px 12px 10px 44px;background:var(--c-panel);border:1px solid var(--c-line);
+  background-image:radial-gradient(circle at 6px -2px,var(--c-bg) 4px,transparent 4.5px);background-size:14px 8px;background-repeat:repeat-x;background-position:0 0}
+.rxsym{position:absolute;left:12px;top:10px;font:600 24px/1 var(--serif);color:var(--c-ink)}
+.rxline .wm{position:absolute;right:-8px;bottom:6px;font:700 11px/1 var(--mono);letter-spacing:.3em;color:var(--red);opacity:.22;transform:rotate(-8deg)}
+/* actions: hold to sign, shortcut hints */
+.actions button{display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.actions kbd{font:500 10.5px/1 var(--mono);padding:2px 5px;border-radius:4px;border:1px solid currentColor;opacity:.55}
+.actions .hold{position:relative;overflow:hidden}
+.actions .hold .fill{position:absolute;inset:0;background:rgba(255,255,255,.22);transform:scaleX(0);transform-origin:left}
+.actions .hold.holding .fill{transform:scaleX(1);transition:transform 1s linear}
+.actions .hold .lbl,.actions .hold kbd{position:relative}
+.sigstamp{border:2px solid var(--green);border-radius:8px;padding:10px 14px;color:var(--green-ink);background:var(--c-panel);transform:rotate(-1.2deg);animation:stamp .35s cubic-bezier(.2,1.4,.4,1) both}
+.sigstamp .t{font:700 11px/1 var(--mono);letter-spacing:.28em;text-transform:uppercase;margin-bottom:6px}
+.sigstamp .nm{font-family:var(--serif);font-style:italic;font-size:19px}
+.sigstamp .mono{font:11.5px var(--mono);margin-top:2px}
+.sigstamp .sub{font-size:12px;margin-top:6px;color:var(--c-muted)}
+@keyframes stamp{from{opacity:0;transform:rotate(-1.2deg) scale(1.25)}to{opacity:1;transform:rotate(-1.2deg) scale(1)}}
+.diff{margin:0;font-size:13.5px;line-height:1.6}
+.diff del{color:var(--red);text-decoration-thickness:1.5px;background:var(--red-soft)}
+.diff ins{color:var(--green-ink);text-decoration:none;background:var(--green-soft);border-bottom:1.5px solid var(--green)}
+/* audit log as a timeline */
+.timeline{position:relative}
+.timeline li{grid-template-columns:52px 1fr;border-top:0!important;position:relative;padding:5px 0 5px 0}
+.timeline li::before{content:"";position:absolute;left:61px;top:11px;width:7px;height:7px;border-radius:50%;background:var(--c-panel);border:1.5px solid var(--green)}
+.timeline li::after{content:"";position:absolute;left:64.5px;top:20px;bottom:-6px;width:1px;background:var(--c-line)}
+.timeline li:last-child::after{display:none}
+.timeline li span{padding-left:22px}
+/* empty inbox */
+.c-empty .stats{display:flex;gap:22px;justify-content:center;margin:6px 0 10px;font-size:13px}
+.c-empty .stats em{font-style:normal;font-weight:600;color:var(--c-ink);font-family:var(--mono)}
+/* night shift */
+body.night{--c-bg:#0E1416;--c-panel:#151D20;--c-ink:#E3EAEC;--c-muted:#8B9AA0;--c-line:#26333A;--c-soft:#1B2529;
+  --green:#5FBF93;--green-ink:#9FE0C0;--green-soft:#173027;--red:#FF8A7A;--red-soft:#3A1C18;--amber:#F2B84B;--amber-soft:#33280F}
+body.night .console,body.night .c-body{background:var(--c-bg)}
+body.night .c-head,body.night .qi.active{background:var(--c-panel)}
+body.night .view button{background:var(--c-panel);color:var(--c-muted)}
+body.night .view button[aria-pressed="true"]{background:var(--c-ink);color:var(--c-bg)}
+body.night .rxline{background-color:var(--c-panel)}
+body.night .draftwrap textarea{background:var(--c-soft);color:var(--c-ink)}
+body.night .actions button{background:var(--c-panel);color:var(--c-ink);border-color:var(--c-line)}
+body.night .actions .approve{background:var(--green);color:#0E1416;border-color:var(--green)}
+body.night .masked{background:#000;color:#E3EAEC}
+body.night .avatar{background:#1E2D29;color:var(--green-ink)}
+body.night .card.stop{background:#24161A}
+body.night .quote{color:var(--c-ink)}
+body.night table.scr td{border-top-color:var(--c-line)}
+body.night .rxline .wm{opacity:.35}
+
+/* ---------- CLINICIAN DASHBOARD ---------- */
+.dash{display:grid;gap:14px;max-width:1240px;margin:0 auto}
+.dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.dhead h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.dhead .demo{font:12px var(--mono);color:var(--c-muted);margin-top:4px}
+.dhead .status{display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:600;border:1px solid var(--c-line);border-radius:999px;padding:6px 12px;background:var(--c-panel)}
+.dhead .status .dot{width:8px;height:8px;border-radius:50%;background:#9AA6AC}
+.dhead .status.on .dot{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.tile{background:var(--c-panel);border:1px solid var(--c-line);border-radius:8px;padding:12px 14px}
+.tile .k{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--c-muted)}
+.tile .v{font:600 26px/1.15 var(--c-font);margin:6px 0 2px;letter-spacing:-.01em}
+.tile .s{font-size:12px;color:var(--c-muted)}
+.tile.act{border-color:var(--green);box-shadow:inset 3px 0 0 var(--green)}
+.tile.safe .v{color:var(--c-ink)}
+.dgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;align-items:start}
+.dgrid > :nth-child(1){grid-area:1/1}.dgrid > :nth-child(2){grid-area:1/2}.dgrid > :nth-child(3){grid-area:2/1/4/2}.dgrid > :nth-child(4){grid-area:2/2}.dgrid > :nth-child(5){grid-area:3/2}.dgrid > :nth-child(6){grid-area:4/1/5/3}
+.chart{margin:4px 0 0}
+.chart svg{width:100%;height:auto;display:block}
+.chart .g{stroke:var(--c-line);stroke-width:1}
+.chart .ax{font:10.5px var(--mono);fill:var(--c-muted)}
+.chart .lbl{font:600 11px var(--mono);fill:var(--c-ink)}
+.chart .bar path{fill:#2B8A62;opacity:.55;transition:opacity .15s}
+.chart .bar.now path{opacity:1}
+.chart .bar .hit{fill:transparent}
+.chart .bar:hover path,.chart .bar:focus path{opacity:1}
+.chart .bar:focus{outline:none}
+.card .note{margin:6px 0 0;font-size:12.5px;color:var(--c-muted)}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:6px 0;border-top:1px solid var(--c-line)}
+.kv span{color:var(--c-muted)}
+.kv b{font-weight:500;text-align:right}
+.okc{color:var(--green)}
+.lnk{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--green);text-decoration:none;border-bottom:1px solid currentColor}
+.tgl{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;padding:8px 0;cursor:pointer;position:relative}
+.tgl input{position:absolute;opacity:0;width:36px;height:20px;margin:0;cursor:pointer}
+.tgl .sw{width:36px;height:20px;border-radius:999px;background:var(--c-line);position:relative;transition:background .15s}
+.tgl .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.tgl input:checked + .sw{background:var(--green)}
+.tgl input:checked + .sw::after{transform:translateX(16px)}
+.tgl input:focus-visible + .sw{outline:2px solid var(--green);outline-offset:2px}
+.tgl b{display:block;font-size:13.5px;font-weight:500}
+.tgl small{font-size:12px;color:var(--c-muted)}
+.mixbar{display:flex;gap:2px;height:14px;margin:8px 0 10px}
+.mixbar span{border-radius:3px}
+.mixbar .on,.legend i.on{background:#2B8A62}
+.mixbar .vid,.legend i.vid{background:#3A6FD0}
+.legend{display:grid;gap:4px;font-size:12.5px;margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:7px;vertical-align:-1px}
+.ptab{width:100%;border-collapse:collapse;font-size:13px}
+.ptab th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--c-muted);padding:6px 8px;border-bottom:1px solid var(--c-line)}
+.ptab td{padding:8px;border-bottom:1px solid var(--c-line)}
+.ptab tr:last-child td{border-bottom:0}
+.ptab .mono{font-family:var(--mono);font-size:12px}
+.ptab tr.live{cursor:pointer;background:var(--c-soft)}
+.ptab tr.live td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+.st{font-size:12px;border:1px solid var(--c-line);border-radius:5px;padding:2px 7px;white-space:nowrap}
+.st.act{border-color:var(--green);color:var(--green);font-weight:600}
+.st.ref{color:var(--c-muted);border-style:dashed}
+.view.tabs button[aria-pressed="true"]{background:var(--c-ink);color:#fff}
+body.night .chart .bar path,body.night .mixbar .on,body.night .legend i.on{fill:#34A574;background:#34A574}
+body.night .mixbar .vid,body.night .legend i.vid{background:#7A86F2}
+body.night .tgl .sw::after{background:#E3EAEC}
+body.night .view.tabs button[aria-pressed="true"]{background:var(--c-ink);color:var(--c-bg)}
+@media (max-width:1180px){.tiles{grid-template-columns:repeat(3,1fr)}.dgrid{grid-template-columns:1fr}.dgrid > *{grid-area:auto!important}}
+
 </style>
 </head>
 <body class="v-patient">
@@ -421,9 +563,16 @@ table.scr td:last-child{text-align:right;width:84px}
   <section class="console" aria-label="Clinician console">
     <div class="c-head">
       <div><div class="t">Clinician console</div><div class="doc" id="docline">Florida practice, 3 clinicians online</div></div>
+      <div class="view tabs" role="tablist" aria-label="Clinician pages">
+        <button id="tabDash" role="tab" aria-pressed="false">Dashboard</button>
+        <button id="tabInbox" role="tab" aria-pressed="true">Inbox</button>
+      </div>
       <div class="view" role="group" aria-label="Record view">
         <button id="viewClin" aria-pressed="true">Clinician view</button>
         <button id="viewAI" aria-pressed="false">What Claude saw</button>
+      </div>
+      <div class="view" role="group" aria-label="Theme">
+        <button id="nightbtn" aria-pressed="false" title="Night-shift theme">Night shift</button>
       </div>
     </div>
     <div class="c-body" id="console"></div>
@@ -1007,7 +1156,7 @@ const Doctor = {
   approve() {
     const ta = $("#draft"); const text = ta ? ta.value : S.draft;
     const edited = text.trim() !== S.draft.trim();
-    S.signed = { at: Date.now(), text, edited };
+    S.signed = { at: Date.now(), text, edited, diff: edited ? wordDiff(S.draft, text) : null };
     S.phase = "answered"; S.answeredAt = Date.now();
     log((edited ? "Clinician edited the AI draft, then " : "Clinician ") + "approved and signed");
     const rx = S.disposition === "async"; // outside the protocol, no protocol prescription goes out
@@ -1111,21 +1260,168 @@ const Live = {
    CONSOLE RENDER
    ========================================================= */
 let viewAI = false;
+let clinTab = "inbox"; // "dash" or "inbox"
+function setClinTab(t) {
+  clinTab = t; $("#tabDash").setAttribute("aria-pressed", t === "dash"); $("#tabInbox").setAttribute("aria-pressed", t === "inbox");
+  seen = new Set(); renderConsole(); $(".c-body").scrollTop = 0;
+}
+
+/* ---------- CLINICIAN DASHBOARD (synthetic demo data, labeled as such) ---------- */
+// Chart colors validated with the dataviz palette checker (light and dark): online visits, video visits.
+const DASH = {
+  shift: "6:00 PM to 12:00 AM", capacity: 6, rating: 4.9, reviews: 1210, license: { id: "FL ME 128440 (demo)", status: "Active", expires: "01/31/2028" },
+  demandHours: ["2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM", "8 PM", "9 PM", "10 PM", "11 PM"],
+  demand: [3, 4, 6, 5, 7, 9, 12, 14, 11, 8], // visit requests per hour, all Florida clinicians on Checkpoint
+  nowIndex: 7,                               // 9 PM bucket (the demo clock starts at 9:40 PM)
+  weekDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  week: [140, 160, 120, 200, 180, 90, 0],    // your flat fees per day; today filled from tonight's visits
+  past: [ // tonight's earlier visits
+    { id: "CP-1039", who: "R. S.", what: "Sinus symptoms", visit: "Online", status: "Signed", reply: 9, fee: 20, check: "Pending" },
+    { id: "CP-1037", who: "L. M.", what: "Painful urination", visit: "Online", status: "Signed", reply: 12, fee: 20, check: "Better" },
+    { id: "CP-1036", who: "A. P.", what: "Painful urination", visit: "Video", status: "Signed", reply: 6, fee: 30, check: "Better" },
+    { id: "CP-1034", who: "K. D.", what: "Painful urination", visit: "Online", status: "Referred in person", reply: 15, fee: 0, check: "n/a" },
+    { id: "CP-1033", who: "J. R.", what: "Pink eye", visit: "Online", status: "Signed", reply: 18, fee: 20, check: "Better" },
+    { id: "CP-1031", who: "T. W.", what: "Painful urination", visit: "Video", status: "Signed", reply: 11, fee: 30, check: "Pending" },
+    { id: "CP-1030", who: "N. G.", what: "Painful urination", visit: "Online", status: "Signed", reply: 14, fee: 20, check: "Better" }
+  ],
+  routedInPerson: 3 // red flags Checkpoint sent to in-person care before any case reached you
+};
+function dashRows() {
+  const rows = DASH.past.slice();
+  if (S.complaint && S.disposition !== "in_person") {
+    const n = S.intake.name ? S.intake.name.value.split(/\s+/).map(w => w[0].toUpperCase() + ".").join(" ") : "New";
+    rows.unshift({ id: S.caseId, who: n, what: "Painful urination", visit: S.visitType === "video" ? "Video" : S.visitType ? "Online" : "Pending",
+      status: S.signed ? (S.signed.refer ? "Referred in person" : "Signed") : S.phase === "submitted" ? "Waiting for you" : "Patient answering",
+      reply: S.answeredAt ? Math.max(1, Math.round((S.answeredAt - S.submittedAt) * CLOCK_SPEED / 60000)) : null,
+      fee: S.signed && !S.signed.refer ? (S.visitType === "video" ? 30 : 20) : null, check: S.signed ? "Pending" : "", live: true });
+  }
+  return rows;
+}
+function median(a) { const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
+function barChart({ labels, values, highlight, unit, title, height = 150, fmt = v => v }) {
+  const W = 520, H = height, padL = 34, padB = 22, padT = 16, max = Math.max(...values, 1);
+  const raw = max / 3, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw); // clean axis steps
+  const top = step * 3, n = values.length, slot = (W - padL) / n, bw = Math.min(28, slot - 6);
+  const y = v => padT + (H - padT - padB) * (1 - v / top);
+  const grid = [0, 1, 2, 3].map(i => `<line x1="${padL}" x2="${W}" y1="${y(step * i)}" y2="${y(step * i)}" class="g"/><text x="${padL - 6}" y="${y(step * i) + 3}" class="ax" text-anchor="end">${fmt(step * i)}</text>`).join("");
+  const bars = values.map((v, i) => {
+    const x = padL + slot * i + (slot - bw) / 2, bh = Math.max(v ? 2 : 0, (H - padT - padB) * v / top), r = Math.min(4, bh / 2);
+    const path = bh ? `M${x},${y(0)} V${y(0) - bh + r} q0,-${r} ${r},-${r} H${x + bw - r} q${r},0 ${r},${r} V${y(0)} Z` : "";
+    return `<g class="bar${i === highlight ? " now" : ""}" tabindex="0"><rect x="${padL + slot * i}" y="${padT}" width="${slot}" height="${H - padT - padB}" class="hit"/><path d="${path}"/>` +
+      `<text x="${x + bw / 2}" y="${H - 6}" class="ax" text-anchor="middle">${labels[i]}</text><title>${labels[i]}: ${fmt(v)} ${unit}</title></g>`;
+  }).join("");
+  const nowLbl = highlight != null ? `<text x="${padL + slot * highlight + slot / 2}" y="${y(values[highlight]) - 6}" class="lbl" text-anchor="middle">${fmt(values[highlight])}</text>` : "";
+  return h("figure", { class: "chart" }, h("div", { html: `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">${grid}${bars}${nowLbl}</svg>` }));
+}
+function renderDashboard() {
+  const me = DATA.clinicians.find(c => c.id === (S.clinicianId || "clin_marquez"));
+  const rows = dashRows(), done = rows.filter(r => r.status === "Signed");
+  const fees = done.reduce((a, r) => a + (r.fee || 0), 0);
+  const paid = done.map(r => r.visit === "Video" ? me.video : me.price);
+  const avgPrice = paid.length ? paid.reduce((a, b) => a + b, 0) / paid.length : 0;
+  const replies = rows.filter(r => r.reply != null).map(r => r.reply);
+  const waiting = S.phase === "submitted" ? 1 : 0;
+  const online = rows.filter(r => r.visit === "Online").length, video = rows.filter(r => r.visit === "Video").length;
+  const week = DASH.week.slice(); week[6] = fees;
+  const tile = (label, value, sub, cls = "") => h("div", { class: "tile " + cls }, h("div", { class: "k" }, label), h("div", { class: "v" }, value), sub ? h("div", { class: "s" }, sub) : null);
+  const toggle = (label, on, onchange, sub) => h("label", { class: "tgl" }, h("input", { type: "checkbox", checked: on, onchange }), h("span", { class: "sw", "aria-hidden": "true" }), h("span", {}, h("b", {}, label), sub ? h("small", {}, sub) : null));
+
+  const head = h("div", { class: "dhead" },
+    h("div", {}, h("h2", {}, "Good evening, " + me.short),
+      h("div", { class: "demo" }, "Tonight's shift " + DASH.shift + "  ·  " + me.license + "  ·  demo data")),
+    h("div", { class: "status " + (me.online ? "on" : "off") }, h("span", { class: "dot" }), me.online ? "Accepting visits" : "Offline"));
+
+  const tiles = h("div", { class: "tiles" },
+    tile("Waiting now", String(waiting), waiting ? "Reply due in under 30 min" : "Inbox clear", waiting ? "act" : ""),
+    tile("Visits tonight", String(done.length), online + " online · " + video + " video"),
+    tile("Your earnings tonight", "$" + fees, "Flat fee per visit, paid weekly"),
+    tile("Average visit price", "$" + Math.round(avgPrice), "What patients paid, cash"),
+    tile("Median reply", median(replies) + " min", "Target: 30 min"),
+    tile("Sent in person by rules", String(DASH.routedInPerson), "Red flags, no case created", "safe"));
+
+  const avail = h("div", { class: "card avail" }, h("h3", {}, "Availability"),
+    toggle("Accepting online visits", me.online, e => { me.online = e.target.checked; log((me.online ? "Clinician went online" : "Clinician went offline") + " (" + me.name + ")"); renderConsole(); }, me.online ? "Patients can pick you now" : "Patients see you as offline"),
+    toggle("Video visits", true, () => {}, "Next open slot tonight 10:15 PM"),
+    h("div", { class: "kv" }, h("span", {}, "Shift"), h("b", {}, DASH.shift)),
+    h("div", { class: "kv" }, h("span", {}, "Capacity"), h("b", {}, "Up to " + DASH.capacity + " visits an hour")),
+    h("div", { class: "kv" }, h("span", {}, "Rating"), h("b", {}, DASH.rating + " from " + DASH.reviews.toLocaleString() + " visits")));
+
+  const license = h("div", { class: "card lic" }, h("h3", {}, "License"),
+    h("div", { class: "kv" }, h("span", {}, "Florida"), h("b", {}, DASH.license.id)),
+    h("div", { class: "kv" }, h("span", {}, "Status"), h("b", { class: "okc" }, "✓ " + DASH.license.status + ", expires " + DASH.license.expires)),
+    h("div", { class: "kv" }, h("span", {}, "Covers"), h("b", {}, "Patients physically in Florida")),
+    h("a", { class: "lnk", href: "https://mqa-internet.doh.state.fl.us/MQASearchServices/HealthCareProviders", target: "_blank", rel: "noopener" }, "Verify on Florida DOH license lookup ↗"));
+
+  const demand = h("div", { class: "card wide" }, h("h3", {}, "Demand tonight ", h("span", { class: "src" }, "visit requests per hour, all Checkpoint clinicians in Florida")),
+    barChart({ labels: DASH.demandHours, values: DASH.demand, highlight: DASH.nowIndex, unit: "requests", title: "Visit requests per hour from 2 PM to 11 PM; peak 14 at 9 PM" }),
+    h("p", { class: "note" }, "Peak is 9 PM. Staying online until midnight covers about 30% of tonight's requests."));
+
+  const earn = h("div", { class: "card" }, h("h3", {}, "Your fees this week ", h("span", { class: "src" }, "flat fee per visit")),
+    barChart({ labels: DASH.weekDays, values: week, highlight: 6, unit: "", title: "Fees per day this week", fmt: v => "$" + v, height: 130 }),
+    h("div", { class: "kv" }, h("span", {}, "Week to date"), h("b", {}, "$" + week.reduce((a, b) => a + b, 0))));
+
+  const tot = Math.max(1, online + video), pOn = Math.round(100 * online / tot);
+  const mix = h("div", { class: "card" }, h("h3", {}, "Visit mix tonight"),
+    h("div", { class: "mixbar", role: "img", "aria-label": `Online ${online}, video ${video}` },
+      h("span", { class: "on", style: `flex:${online || 0.0001}`, title: "Online: " + online }), h("span", { class: "vid", style: `flex:${video || 0.0001}`, title: "Video: " + video })),
+    h("div", { class: "legend" }, h("span", {}, h("i", { class: "on" }), "Online " + online + " (" + pOn + "%) · $" + me.price), h("span", {}, h("i", { class: "vid" }), "Video " + video + " (" + (100 - pOn) + "%) · $" + me.video)),
+    h("div", { class: "kv" }, h("span", {}, "You're paid"), h("b", {}, "$20 online, $30 video. Never a percentage.")));
+
+  const table = h("div", { class: "card wide" }, h("h3", {}, "Patients tonight ", h("span", { class: "src" }, "initials only on this screen")),
+    h("table", { class: "ptab" },
+      h("thead", {}, h("tr", {}, ["Case", "Patient", "Reason", "Visit", "Status", "Reply", "Your fee", "72-hour check"].map(t => h("th", {}, t)))),
+      h("tbody", {}, rows.map(r => h("tr", { class: r.live ? "live" : "", onclick: r.live ? () => setClinTab("inbox") : null },
+        h("td", { class: "mono" }, r.id), h("td", {}, r.who), h("td", {}, r.what), h("td", {}, r.visit),
+        h("td", {}, h("span", { class: "st " + (r.status === "Waiting for you" ? "act" : r.status.startsWith("Referred") ? "ref" : "") }, r.status)),
+        h("td", { class: "mono" }, r.reply != null ? r.reply + " min" : ""), h("td", { class: "mono" }, r.fee != null ? "$" + r.fee : ""), h("td", {}, r.check))))));
+
+  return h("div", { class: "dash" }, head, tiles, h("div", { class: "dgrid" }, demand, avail, earn, mix, license, table),
+    h("div", { class: "foot" }, "Dashboard numbers are synthetic demo data, except the live case from this demo."));
+}
 let seen = new Set();
 function val(key, value, maskLabel, extra) {
   if (value == null || value === "") return h("span", { class: "v wait" }, "Waiting for patient");
   if (viewAI && maskLabel) return h("span", { class: "v" }, h("span", { class: "masked" }, maskLabel));
   return h("span", { class: "v" }, value, extra || null);
 }
-function row(key, label, node) { const r = h("div", { class: "row", "data-k": key }, h("span", { class: "k" }, label), node); return r; }
+// A chart row. meta.at = when it arrived (shown in the margin like a ledger), meta.src = who wrote it.
+function row(key, label, node, meta = {}) {
+  return h("div", { class: "row", "data-k": key }, h("span", { class: "k" }, label), node,
+    h("span", { class: "rmeta" }, meta.src ? srcMark(meta.src) : null, meta.at ? h("time", {}, stamp(meta.at)) : null));
+}
+// Who wrote a field: the patient (typed into a secure field), Checkpoint's fixed rules, or Claude.
+const SRC = { patient: ["P", "Typed by the patient into a secure field"], rules: ["R", "Set by Checkpoint's fixed rules"], ai: ["AI", "Drafted by Claude from the masked case"], clinician: ["C", "Written by the clinician"] };
+function srcMark(src) { const [t, title] = SRC[src]; return h("span", { class: "src-mark " + src, title, "aria-label": title }, t); }
+function stamp(ms) { return new Date(demoNow(ms)).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }); }
+// Word-level diff of Claude's draft against what the clinician signed.
+function wordDiff(a, b) {
+  const x = a.split(/(\s+)/), y = b.split(/(\s+)/), n = x.length, m = y.length;
+  const L = Array.from({ length: n + 1 }, () => new Int16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = x[i] === y[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const out = []; let i = 0, j = 0, changed = 0;
+  while (i < n || j < m) {
+    if (i < n && j < m && x[i] === y[j]) { out.push(["=", x[i]]); i++; j++; }
+    else if (j < m && (i >= n || L[i][j + 1] >= L[i + 1][j])) { out.push(["+", y[j]]); if (y[j].trim()) changed++; j++; }
+    else { out.push(["-", x[i]]); if (x[i].trim()) changed++; i++; }
+  }
+  return { parts: out, changed };
+}
+// Reply clock ring: fills as the 30-minute reply target runs out, amber in the last 5 minutes.
+function ringSVG() {
+  const used = S.submittedAt ? Math.min(1, (Date.now() - S.submittedAt) * CLOCK_SPEED / (REPLY_TARGET_MIN * 60000)) : 0;
+  const late = used > (REPLY_TARGET_MIN - 5) / REPLY_TARGET_MIN, C = 2 * Math.PI * 7;
+  return `<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="var(--c-line)" stroke-width="2.4"/><circle cx="9" cy="9" r="7" fill="none" stroke="${late ? "var(--amber)" : "var(--green)"}" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - used)}" transform="rotate(-90 9 9)"/></svg>`;
+}
 function renderConsole() {
   const root = $("#console");
   const c = Engine.clinician();
   $("#docline").textContent = c ? `Signed in as ${c.name}, ${c.cred}. ${c.license}` : "Florida practice, 3 clinicians online";
+  if (clinTab === "dash") { root.replaceChildren(renderDashboard()); return; }
   const queue = queueList();
   if (!S.complaint) {
-    root.replaceChildren(h("div", { class: "cx" }, queue, h("div", { class: "cx-main" }, h("div", { class: "c-empty" }, h("b", {}, "No new case yet"),
-      "When a patient's AI hands off through Checkpoint, the case builds here as they answer."), logBox())));
+    root.replaceChildren(h("div", { class: "cx" }, queue, h("div", { class: "cx-main" }, h("div", { class: "c-empty" }, h("b", {}, "Inbox clear"),
+      h("div", { class: "stats" }, h("span", {}, h("em", {}, "3"), " visits tonight"), h("span", {}, h("em", {}, "14 min"), " median reply"), h("span", {}, h("em", {}, "0"), " waiting")),
+      h("div", {}, "When a patient's AI hands off through Checkpoint, the case builds here as they answer.")), logBox())));
     seen = new Set(); return;
   }
   const a = S.intake, ans = id => S.answers[id] ? S.answers[id].vals : null;
@@ -1142,17 +1438,17 @@ function renderConsole() {
   const chip = (cls, text, k) => h("span", { class: "chip " + cls, "data-k": k }, text);
   const banner = h("div", { class: "pbanner" },
     h("div", { class: "who" }, h("div", { class: "avatar" }, viewAI || !name ? "?" : initials(name)),
-      h("div", {}, h("h2", {}, title),
+      h("div", {}, h("h2", {}, viewAI ? h("span", { class: "masked" }, "[PATIENT_NAME]") : title),
         h("div", { class: "demo" }, [sex === "Female" ? "F" : sex === "Male" ? "M" : null, ag != null ? (viewAI ? "30 to 39 y" : ag + " y") : ans("age") ? ans("age")[0] : null,
           a.dob && !viewAI ? "DOB " + a.dob.value : null, S.caseId].filter(Boolean).join("  ·  ")))),
     h("div", { class: "chips" },
-      allergy ? chip(nka ? "g" : "r", viewAI ? "[ALLERGIES]" : nka ? "NKDA" : "Allergy: " + allergy, "al" + allergy) : chip("", "Allergies pending", "al0"),
-      sex === "Male" ? null : red ? chip(pregnant ? "r" : "g", pregnant ? "Possibly pregnant" : "Denies pregnancy", "preg" + pregnant) : chip("", "Pregnancy pending", "preg0"),
+      allergy ? chip(nka || viewAI ? "" : "r", viewAI ? "[ALLERGIES]" : nka ? "NKDA" : "Allergy: " + allergy, "al" + allergy) : chip("wait", "Allergies pending", "al0"),
+      sex === "Male" ? null : red ? chip(pregnant ? "r" : "", pregnant ? "Possibly pregnant" : "Not pregnant", "preg" + pregnant) : chip("wait", "Pregnancy pending", "preg0"),
       a.dob && ag == null ? chip("r", "DOB unreadable", "dobx") : null,
-      where == null ? chip("", "Location pending", "loc0") : chip(where ? "g" : "r", where ? "In Florida ✓" : "Outside Florida", "loc" + where),
-      S.visitType ? chip("b", S.visitType === "video" ? "Video" + (S.videoNow ? ", now" : ", " + S.slot.replace(/^Tonight /, "")) : "Online visit (async)", "vt" + S.visitType) : null),
+      where == null ? chip("wait", "Location pending", "loc0") : chip(where ? "" : "r", where ? "In Florida" : "Outside Florida", "loc" + where),
+      S.visitType ? chip("", S.visitType === "video" ? "Video" + (S.videoNow ? ", now" : ", " + S.slot.replace(/^Tonight /, "")) : "Online visit (async)", "vt" + S.visitType) : null),
     h("div", { class: "clock" }, statusPill(),
-      S.submittedAt ? h("div", { id: "waitclock" }, clockText()) : h("div", {}, "Received " + fmtTime(S.t0))));
+      S.submittedAt ? h("div", { class: "ringrow" }, h("span", { id: "waitring", html: ringSVG() }), h("span", { id: "waitclock" }, clockText())) : h("div", {}, "Received " + fmtTime(S.t0))));
 
   // ---- One-line summary, written by the rules (not AI)
   const durationTxt = ans("duration") ? ans("duration")[0].toLowerCase() : null;
@@ -1168,7 +1464,7 @@ function renderConsole() {
     : S.disposition === "in_person" ? h("div", { class: "verdict r" }, "Red flag. Sent to in-person care, no case created")
     : h("div", { class: "verdict" }, "Screener in progress");
   const summary = h("div", { class: "card", "data-k": "sum" + Object.keys(S.answers).length },
-    h("h3", {}, "Summary ", h("span", { class: "src" }, "written by Checkpoint's rules, not AI")),
+    h("h3", {}, "Summary ", srcMark("rules"), h("span", { class: "src" }, "written by Checkpoint's rules, not AI")),
     h("p", { class: "hpi" }, summaryTxt), verdict,
     h("div", { class: "quote" }, h("span", { class: "k" }, "Patient wrote "), "“" + S.complaint + "”"));
 
@@ -1192,20 +1488,21 @@ function renderConsole() {
       crit(a.dob && ag == null ? "Birth date unreadable" : "Birth date matches age answer", a.dob && ag == null ? "warn" : ag == null ? "wait" : (ag >= 18 && ag <= 64) === (ans("age") && ans("age")[0] === "18 to 64") ? "ok" : "warn", "id")));
 
   // ---- Screener answers, compact
-  const screener = h("details", { class: "card fold" }, h("summary", {}, h("h3", {}, "Screener answers ", h("span", { class: "src" }, DATA.protocol.version))),
+  const screener = h("details", { class: "card fold", open: true }, h("summary", {}, h("h3", {}, "Screener answers ", h("span", { class: "src" }, DATA.protocol.version))),
     h("table", { class: "scr" }, DATA.questions.map(q => {
       const v = ans(q.id);
-      return h("tr", { "data-k": "q_" + q.id + (v ? "_done" : "") }, h("td", {}, q.short), h("td", {}, v ? v.join(", ") : h("span", { style: "color:#9AA6AC" }, "Not asked yet")));
+      return h("tr", { "data-k": "q_" + q.id + (v ? "_done" : "") }, h("td", {}, q.short), h("td", {}, v ? v.join(", ") : h("span", { class: "dim" }, "Not asked yet")),
+        h("td", { class: "rmeta" }, v ? [srcMark("patient"), h("time", {}, stamp(S.answers[q.id].at))] : null));
     })));
 
   // ---- Chart: meds, pharmacy, contact
   const pharmacy = a.pharmacy ? a.pharmacy.value : null;
   const chart = h("div", { class: "card" }, h("h3", {}, "Chart"),
-    row("meds" + !!a.meds, "Medications", val("meds", a.meds && a.meds.value, "[MEDICATIONS]")),
-    row("allergies" + !!a.allergies, "Allergies", val("allergies", allergy, "[ALLERGIES]")),
-    row("pharmacy" + !!a.pharmacy, "Pharmacy", val("pharmacy", pharmacy, "[PHARMACY]")),
-    row("address" + !!a.address, "Location now", val("address", a.address && a.address.value, "[ADDRESS]")),
-    row("phone" + !!a.phone, "Mobile", val("phone", a.phone && a.phone.value, "[PHONE]")),
+    row("meds" + !!a.meds, "Medications", val("meds", a.meds && a.meds.value, "[MEDICATIONS]"), a.meds ? { src: "patient", at: a.meds.at } : {}),
+    row("allergies" + !!a.allergies, "Allergies", val("allergies", allergy, "[ALLERGIES]"), a.allergies ? { src: "patient", at: a.allergies.at } : {}),
+    row("pharmacy" + !!a.pharmacy, "Pharmacy", val("pharmacy", pharmacy, "[PHARMACY]"), a.pharmacy ? { src: "patient", at: a.pharmacy.at } : {}),
+    row("address" + !!a.address, "Location now", val("address", a.address && a.address.value, "[ADDRESS]"), a.address ? { src: "patient", at: a.address.at } : {}),
+    row("phone" + !!a.phone, "Mobile", val("phone", a.phone && a.phone.value, "[PHONE]"), a.phone ? { src: "patient", at: a.phone.at } : {}),
     row("c" + !!S.consents, "Consents", val("c", S.consents ? "Telehealth, AI disclosure, share with practice" + (S.consents.followup ? ", 72-hour check-in" : "") + ". Signed " + fmtTime(S.consents.at) : null)),
     row("card" + !!S.consents, "Payment", val("card", S.consents ? "$" + Engine.price() + " held on test card 4242. You're paid $" + (S.visitType === "video" ? 30 : 20) + " flat." : null)));
 
@@ -1227,7 +1524,7 @@ function renderConsole() {
     : h("div", { class: "card rxcard", "data-k": "rx" + p.drug + !!pharmacy },
       h("h3", {}, "Order ", h("span", { class: "src" }, "protocol default, you can change it")),
       h("div", { class: "dx" }, h("span", { class: "k" }, "Dx "), p.dx),
-      h("div", { class: "rxline" }, h("b", {}, nitro ? "Nitrofurantoin mono/macro 100 mg capsule" : "Fosfomycin 3 g oral granules"),
+      h("div", { class: "rxline" }, h("span", { class: "rxsym", "aria-hidden": "true" }, "℞"), h("span", { class: "wm", "aria-hidden": "true" }, "SIMULATED"), h("b", {}, nitro ? "Nitrofurantoin mono/macro 100 mg capsule" : "Fosfomycin 3 g oral granules"),
         h("div", {}, nitro ? "Sig: 1 capsule by mouth twice daily for 5 days" : "Sig: dissolve 1 packet in water, take once"),
         h("div", { class: "neg" }, nitro ? "Disp: 10 capsules  ·  Refills: 0" : "Disp: 1 packet  ·  Refills: 0")),
       h("div", { class: "checks" },
@@ -1236,16 +1533,19 @@ function renderConsole() {
         h("span", { class: "ok" }, "✓ Not a controlled substance")),
       h("div", { class: "neg" }, "To: " + (pharmacy ? (viewAI ? "[PHARMACY]" : pharmacy) : "pharmacy pending") + ". e-Prescribing simulated in this demo. " + p.alt + "."));
     const msg = h("div", { class: "card draftwrap", "data-k": "draft" + !!S.submittedAt + (S.draftStatus || "") },
-      h("h3", {}, "Message to patient ", h("span", { class: "src ai" }, S.draftStatus === "claude" ? "drafted by Claude, review before signing" : "protocol template")),
+      h("h3", {}, "Message to patient ", S.draftStatus === "claude" ? srcMark("ai") : srcMark("rules"), h("span", { class: "src ai" }, S.draftStatus === "claude" ? "drafted by Claude, review before signing" : "protocol template")),
       S.submittedAt ? [
         h("textarea", { id: "draft", readonly: true, "aria-label": "Draft reply to patient" }, viewAI ? maskDraft(S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft) : (S.signed && !S.signed.video && !S.signed.refer ? S.signed.text : S.draft)),
         h("div", { class: "neg" }, S.draftStatus === "drafting" ? "Claude is drafting from the masked case. Template shown meanwhile." : "Claude never saw the patient's name or details; Checkpoint filled them in. You sign, Claude doesn't.")
       ] : h("div", { class: "neg" }, "The draft appears when the patient sends the case."));
-    decide = h("aside", { class: "decide" }, stops, order, msg, h("div", { class: "actions", id: "actions" }),
-      S.signed ? h("div", { class: "signed" },
-        S.signed.video ? "Video visit started " + fmtTime(S.signed.at) + "." :
-        S.signed.refer ? "Referred to in-person care " + fmtTime(S.signed.at) + ". Patient not charged." :
-        `Signed by ${c.name}, ${c.cred} at ${fmtTime(S.signed.at)}${S.signed.edited ? ", after editing the AI draft" : ""}.${S.disposition === "async" ? " e-Prescription sent (simulated)." : ""}`) : null);
+    const signedBits = [S.signed && S.signed.diff && S.signed.diff.changed ? h("div", { class: "card diffcard" },
+        h("h3", {}, S.signed.diff.changed + " word" + (S.signed.diff.changed > 1 ? "s" : "") + " changed by " + c.short, srcMark("clinician")),
+        h("p", { class: "diff" }, S.signed.diff.parts.map(([op, w]) => op === "=" ? w : h(op === "+" ? "ins" : "del", {}, w)))) : null,
+      S.signed ? (S.signed.refer || S.signed.video ? h("div", { class: "signed" }, S.signed.video ? "Video visit started " + fmtTime(S.signed.at) + "." : "Referred to in-person care " + fmtTime(S.signed.at) + ". Patient not charged.")
+        : h("div", { class: "sigstamp" }, h("div", { class: "t" }, "Signed"), h("div", { class: "nm" }, c.name + ", " + c.cred),
+            h("div", { class: "mono" }, c.license + "  ·  " + stamp(S.signed.at)),
+            h("div", { class: "sub" }, S.disposition === "async" ? "e-Prescription sent (simulated)" : "Note signed, message sent"))) : null];
+    decide = h("aside", { class: "decide" }, S.signed ? [signedBits[1], signedBits[0]] : null, stops, order, msg, S.signed ? null : h("div", { class: "actions", id: "actions" }));
   }
 
   const mainCol = S.disposition === "in_person"
@@ -1292,10 +1592,20 @@ function renderActions() {
   const editing = ta && !ta.readOnly;
   box.replaceChildren(...[
     S.visitType === "video" && !S.videoStarted ? h("button", { class: "approve", disabled: !ready || blocked, onclick: Doctor.video }, "Start video visit") : null,
-    h("button", { class: S.visitType === "video" && !S.videoStarted ? "" : "approve", disabled: !canSign, title: blocked ? "Patient is outside Florida" : needsVideoFirst ? "Start the video visit first" : null, onclick: Doctor.approve }, S.disposition === "video" ? "Sign note and send message" : "Approve, sign and send Rx"),
-    h("button", { disabled: !ready || blocked, onclick: Doctor.edit }, editing ? "Done editing" : "Edit draft"),
-    S.visitType !== "video" ? h("button", { disabled: !ready || !!S.videoStarted, onclick: Doctor.video }, S.videoStarted ? "Video started" : "Switch to video") : null,
-    h("button", { disabled: !ready, onclick: Doctor.refer }, "Refer in person")].filter(Boolean));
+    holdToSign(h("button", { class: (S.visitType === "video" && !S.videoStarted ? "" : "approve") + " hold", id: "signbtn", disabled: !canSign, title: blocked ? "Patient is outside Florida" : needsVideoFirst ? "Start the video visit first" : "Hold to sign, or press ⌘ Enter" },
+      h("span", { class: "fill", "aria-hidden": "true" }), h("span", { class: "lbl" }, S.disposition === "video" ? "Hold to sign note and send" : "Hold to sign and send Rx"), h("kbd", {}, "⌘↵"))),
+    h("button", { disabled: !ready || blocked, onclick: Doctor.edit }, editing ? "Done editing" : "Edit draft", h("kbd", {}, "E")),
+    S.visitType !== "video" ? h("button", { disabled: !ready || !!S.videoStarted, onclick: Doctor.video }, S.videoStarted ? "Video started" : "Switch to video", h("kbd", {}, "V")) : null,
+    h("button", { disabled: !ready, onclick: Doctor.refer }, "Refer in person", h("kbd", {}, "R"))].filter(Boolean));
+}
+// Signing takes a deliberate 1-second press. Keyboard (Enter, ⌘ Enter) and the Play demo's own click sign at once.
+function holdToSign(btn) {
+  let timer = null;
+  const cancel = () => { clearTimeout(timer); timer = null; btn.classList.remove("holding"); };
+  btn.addEventListener("pointerdown", e => { if (btn.disabled || e.button !== 0) return; btn.classList.add("holding"); timer = setTimeout(() => { cancel(); Doctor.approve(); }, 1000); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, cancel));
+  btn.addEventListener("click", e => { if (e.detail === 0 && !btn.disabled) Doctor.approve(); });
+  return btn;
 }
 function statusText() {
   return { idle: "Starting", screening: "Screening in progress", result: "Screener done", clinicians: "Choosing a clinician",
@@ -1308,10 +1618,13 @@ function statusPill() {
 function waitText() { const s = Math.floor((Date.now() - S.submittedAt) * CLOCK_SPEED / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
 function logBox() {
   return h("div", { class: "log" }, h("h3", {}, "Audit log"),
-    S.events.length ? h("ol", {}, S.events.slice().reverse().map(e => h("li", {}, h("time", {}, fmtTime(e.at)), h("span", {}, e.text))))
+    S.events.length ? h("ol", { class: "timeline" }, S.events.slice().reverse().map(e => {
+      const sec = Math.max(0, Math.round((e.at - S.t0) * CLOCK_SPEED / 1000));
+      return h("li", {}, h("time", { title: fmtTime(e.at) }, "+" + Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0")), h("span", {}, e.text));
+    }))
       : h("div", { class: "neg" }, "Every decision Checkpoint makes is logged here."));
 }
-setInterval(() => { if (S && S.submittedAt && !S.answeredAt) { const el = $("#waitclock"); if (el) el.textContent = clockText(); } }, 1000);
+setInterval(() => { if (S && S.submittedAt && !S.answeredAt) { const el = $("#waitclock"); if (el) el.textContent = clockText(); const r = $("#waitring"); if (r) r.innerHTML = ringSVG(); } }, 1000);
 
 /* =========================================================
    WINDOWS: patient's Claude chat and the clinician's console
@@ -1339,7 +1652,7 @@ function toast(title, sub, label, go) {
 function caseSent() {
   if (win === "split") return;
   $("#vClin").classList.add("ping");
-  toast("New case " + S.caseId + " for " + Engine.clinician().short, "The handoff is complete. See what the clinician receives.", "Open clinician window", () => setWin("clinician"));
+  toast("New case " + S.caseId + " for " + Engine.clinician().short, "The handoff is complete. See what the clinician receives.", "Open clinician window", () => { clinTab = "inbox"; $("#tabDash").setAttribute("aria-pressed", "false"); $("#tabInbox").setAttribute("aria-pressed", "true"); setWin("clinician"); });
 }
 function replySent() {
   if (win === "split") return;
@@ -1497,6 +1810,24 @@ $("#composer").addEventListener("submit", e => {
 $("#vPatient").onclick = () => setWin("patient");
 $("#vClin").onclick = () => setWin("clinician");
 $("#viewClin").onclick = () => { viewAI = false; $("#viewClin").setAttribute("aria-pressed", "true"); $("#viewAI").setAttribute("aria-pressed", "false"); seen = new Set(); renderConsole(); };
+$("#tabDash").onclick = () => setClinTab("dash");
+$("#tabInbox").onclick = () => setClinTab("inbox");
+$("#nightbtn").onclick = () => { const on = !document.body.classList.contains("night"); document.body.classList.toggle("night", on); $("#nightbtn").setAttribute("aria-pressed", on); try { localStorage.setItem("cp-night", on ? "1" : ""); } catch (e) {} };
+try { if (localStorage.getItem("cp-night")) { document.body.classList.add("night"); $("#nightbtn").setAttribute("aria-pressed", "true"); } } catch (e) {}
+// Clinician shortcuts: ⌘/Ctrl Enter signs, E edits the draft, V switches or starts video, R refers in person.
+document.addEventListener("keydown", e => {
+  if (win === "patient" || e.altKey) return;
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  const btn = sel => { const b = $(sel); if (b && !b.disabled) { e.preventDefault(); b.click(); } };
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { const b = $("#signbtn"); if (b && !b.disabled) { e.preventDefault(); Doctor.approve(); } return; }
+  if (typing || e.metaKey || e.ctrlKey) return;
+  const k = e.key.toLowerCase();
+  const find = label => [...document.querySelectorAll("#actions button")].find(b => b.textContent.toLowerCase().includes(label));
+  const go = b => { if (b && !b.disabled) { e.preventDefault(); b.click(); } };
+  if (k === "e") go(find("edit") || find("done editing"));
+  else if (k === "v") go(find("video"));
+  else if (k === "r") go(find("refer"));
+});
 $("#viewAI").onclick = () => { viewAI = true; $("#viewAI").setAttribute("aria-pressed", "true"); $("#viewClin").setAttribute("aria-pressed", "false"); seen = new Set(); renderConsole(); };
 document.addEventListener("keydown", e => {
   if (/^Digit[1-6]$/.test(e.code) && !e.altKey && !e.metaKey && !e.ctrlKey && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && win === "patient") {
